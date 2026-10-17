@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Warm-neutral palette. Tokens are the single source of truth for color. */
+:root {
+  --background: #f8f5f0;
+  --surface: #ffffff;
+  --surface-2: #f2ede5;
+  --surface-3: #e9e2d7;
+  --foreground: #2a241f;
+  --muted: #776c62;
+  --border: #e6dfd4;
+  --ring: #c56b44;
+
+  --primary: #b9603b;
+  --primary-hover: #a5532f;
+  --primary-soft: #f6e6dc;
+  --primary-foreground: #ffffff;
+
+  --sage: #5f8466;
+  --sage-soft: #e3ece2;
+  --amber: #b97a1e;
+  --amber-soft: #f7ebd5;
+  --danger: #b6443a;
+  --danger-soft: #f6e0dc;
+  --sky: #4b7a9c;
+  --sky-soft: #e0eaf1;
+
+  --shadow-color: 32 22% 30%;
+  --radius: 1.1rem;
+}
+
+.dark {
+  --background: #161311;
+  --surface: #1f1b18;
+  --surface-2: #29241f;
+  --surface-3: #342d27;
+  --foreground: #f2ece5;
+  --muted: #a79b8e;
+  --border: #3a322b;
+  --ring: #e08a5f;
+
+  --primary: #df8a5e;
+  --primary-hover: #e89a72;
+  --primary-soft: #3a2a21;
+  --primary-foreground: #1b1411;
+
+  --sage: #8fb795;
+  --sage-soft: #233027;
+  --amber: #e0a94f;
+  --amber-soft: #352a19;
+  --danger: #e57b70;
+  --danger-soft: #3a2220;
+  --sky: #86b3d4;
+  --sky-soft: #1e2a33;
+
+  --shadow-color: 0 0% 0%;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-sage: var(--sage);
+  --color-sage-soft: var(--sage-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-sky: var(--sky);
+  --color-sky-soft: var(--sky-soft);
+
+  --font-sans: var(--font-rubik), system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-card: var(--radius);
+  --shadow-soft: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 4px 16px -6px hsl(var(--shadow-color) / 0.12);
+  --shadow-lift: 0 2px 4px hsl(var(--shadow-color) / 0.06), 0 12px 32px -10px hsl(var(--shadow-color) / 0.22);
+
+  --animate-fade-up: fade-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop: pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "kern";
+  min-height: 100dvh;
+}
+
+::selection { background: var(--primary-soft); }
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* iOS safe areas */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* Numbers stay LTR inside RTL text */
+.num { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

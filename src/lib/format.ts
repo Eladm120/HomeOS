@@ -1,0 +1,90 @@
+export const TIMEZONE = "Asia/Jerusalem";
+export const LOCALE = "he-IL";
+
+const numberFmt = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 3 });
+const currencyFmt = new Intl.NumberFormat(LOCALE, { style: "currency", currency: "ILS" });
+
+export function formatQuantity(qty: number | string | null | undefined): string {
+  const n = typeof qty === "string" ? Number(qty) : qty;
+  if (n === null || n === undefined || Number.isNaN(n)) return "";
+  return numberFmt.format(n);
+}
+
+export function formatQuantityWithUnit(qty: number | string, unit: string): string {
+  const q = formatQuantity(qty);
+  return unit ? `${q} ${unit}` : q;
+}
+
+export function formatCurrency(amount: number, currency = "ILS"): string {
+  if (currency === "ILS") return currencyFmt.format(amount);
+  return new Intl.NumberFormat(LOCALE, { style: "currency", currency }).format(amount);
+}
+
+/** Returns the hour (0-23) in the household timezone. */
+export function hourInZone(date: Date, timeZone = TIMEZONE): number {
+  const h = new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone }).format(date);
+  return Number(h);
+}
+
+export function greetingFor(date: Date, timeZone = TIMEZONE): string {
+  const h = hourInZone(date, timeZone);
+  if (h >= 5 && h < 12) return "בוקר טוב";
+  if (h >= 12 && h < 17) return "צהריים טובים";
+  if (h >= 17 && h < 22) return "ערב טוב";
+  return "לילה טוב";
+}
+
+/** "אלעד ונעה", "אלעד, נעה ודנה" — Hebrew list joining. */
+export function joinHebrewNames(names: string[]): string {
+  const clean = names.map((n) => n.trim()).filter(Boolean);
+  if (clean.length <= 1) return clean[0] ?? "";
+  return `${clean.slice(0, -1).join(", ")} ו${clean[clean.length - 1]}`;
+}
+
+export function formatLongDate(date: Date, timeZone = TIMEZONE): string {
+  return new Intl.DateTimeFormat(LOCALE, { weekday: "long", day: "numeric", month: "long", timeZone }).format(date);
+}
+
+export function formatHebrewCalendarDate(date: Date, timeZone = TIMEZONE): string {
+  return new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { day: "numeric", month: "long", timeZone }).format(date);
+}
+
+export function formatShortDate(value: string | Date, timeZone = TIMEZONE): string {
+  const d = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short", timeZone }).format(d);
+}
+
+/** YYYY-MM-DD for "today" in the household timezone. */
+export function todayInZone(now = new Date(), timeZone = TIMEZONE): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+/** Whole days from today (in zone) until a YYYY-MM-DD date. Negative = past. */
+export function daysUntil(isoDate: string, now = new Date(), timeZone = TIMEZONE): number {
+  const today = Date.parse(`${todayInZone(now, timeZone)}T00:00:00Z`);
+  const target = Date.parse(`${isoDate.slice(0, 10)}T00:00:00Z`);
+  return Math.round((target - today) / 86_400_000);
+}
+
+export function relativeDays(days: number): string {
+  if (days === 0) return "היום";
+  if (days === 1) return "מחר";
+  if (days === -1) return "אתמול";
+  if (days === 2) return "בעוד יומיים";
+  if (days > 0) return `בעוד ${days} ימים`;
+  if (days === -2) return "לפני יומיים";
+  return `לפני ${Math.abs(days)} ימים`;
+}
+
+const rtf = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
+
+export function timeAgo(value: string | Date, now = new Date()): string {
+  const d = typeof value === "string" ? new Date(value) : value;
+  const sec = Math.round((d.getTime() - now.getTime()) / 1000);
+  const abs = Math.abs(sec);
+  if (abs < 60) return "הרגע";
+  if (abs < 3600) return rtf.format(Math.round(sec / 60), "minute");
+  if (abs < 86_400) return rtf.format(Math.round(sec / 3600), "hour");
+  if (abs < 86_400 * 30) return rtf.format(Math.round(sec / 86_400), "day");
+  return formatShortDate(d);
+}

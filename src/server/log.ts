@@ -1,0 +1,17 @@
+import "server-only";
+
+type Level = "info" | "warn" | "error";
+
+function emit(level: Level, event: string, data?: Record<string, unknown>) {
+  const line = JSON.stringify({ ts: new Date().toISOString(), level, event, ...data });
+  if (level === "error") console.error(line);
+  else if (level === "warn") console.warn(line);
+  else console.log(line);
+}
+
+/** Structured JSON logging. Never pass secrets, tokens, or document contents. */
+export const log = {
+  info: (event: string, data?: Record<string, unknown>) => emit("info", event, data),
+  warn: (event: string, data?: Record<string, unknown>) => emit("warn", event, data),
+  error: (event: string, data?: Record<string, unknown>) => emit("error", event, data),
+};
