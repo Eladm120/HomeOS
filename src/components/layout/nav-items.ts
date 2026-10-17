@@ -1,4 +1,4 @@
-import { Bot, ChefHat, House, LayoutGrid, ShoppingBasket, type LucideIcon } from "lucide-react";
+import { ChefHat, House, LayoutGrid, ShoppingBasket, Sparkles, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   href: string;
@@ -13,8 +13,9 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/shopping", label: "קניות", icon: ShoppingBasket },
   { href: "/household", label: "משק הבית", icon: LayoutGrid, match: ["/inventory", "/household"] },
   { href: "/recipes", label: "מתכונים", icon: ChefHat },
-  { href: "/assistant", label: "עוזר AI", icon: Bot },
 ];
+
+export const ASSISTANT_ITEM: NavItem = { href: "/assistant", label: "עוזר AI", icon: Sparkles };
 
 export function isActive(item: NavItem, pathname: string): boolean {
   if (item.href === "/") return pathname === "/";

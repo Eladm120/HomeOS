@@ -13,7 +13,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(dark ? "light" : "dark")}
-      className="grid size-10 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+      className="glass pressable grid size-10 place-items-center rounded-full text-foreground/80"
       aria-label={dark ? "מצב בהיר" : "מצב כהה"}
     >
       {dark ? <Sun className="size-5" /> : <Moon className="size-5" />}

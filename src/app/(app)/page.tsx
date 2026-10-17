@@ -57,7 +57,15 @@ export default async function HomePage() {
     expiringSoon: expiring.filter((x) => x.exp.state === "soon").map((x) => ({ name: x.item.name, days: x.exp.days })),
   });
 
-  const recentGrocery = grocery.slice(0, 5);
+  const recentGrocery = grocery.slice(0, 4);
+  const ratio = (n: number) => (inventory.length ? n / inventory.length : null);
+  const health = {
+    stock: ratio(inventory.filter((i) => stockLevel(i) === "ok").length),
+    verified: ratio(
+      inventory.filter((i) => i.last_verified_at && now.getTime() - new Date(i.last_verified_at).getTime() < 14 * 86_400_000).length,
+    ),
+    fresh: ratio(inventory.length - expiring.length),
+  };
   const signedUrls = await signPaths(supabase, [
     ...recentGrocery.map((g) => g.image_path),
     ...needs.slice(0, 5).map((i) => i.image_path),
@@ -73,9 +81,11 @@ export default async function HomePage() {
       today={todayInZone(now, tz)}
       brief={brief}
       groceryCount={grocery.length}
-      groceryPreview={grocery.slice(0, 6).map((g) => g.name)}
+      urgentCount={grocery.filter((g) => g.priority === "high").length}
+      health={health}
+      members={ctx.members.map((m) => ({ id: m.user_id, name: m.profile?.display_name ?? "" }))}
       recentGrocery={recentGrocery}
-      needs={needs.slice(0, 6).map((i) => ({ ...i, onList: onList.has(i.id) }))}
+      needs={needs.slice(0, 4).map((i) => ({ ...i, onList: onList.has(i.id) }))}
       needsTotal={needs.length}
       expiring={expiring.slice(0, 5).map((x) => ({ id: x.item.id, name: x.item.name, days: x.exp.days }))}
       inventoryCount={inventory.length}

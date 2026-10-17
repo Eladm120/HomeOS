@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Crown, LogOut, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { Crown, Plus, X, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   addCategory,
@@ -18,7 +18,8 @@ import {
   updateDisplayName,
 } from "@/server/actions/household";
 import type { ActionResult } from "@/lib/types";
-import { Badge, Card, CardHeader } from "@/components/ui/card";
+import { Card, ListRow, SectionLabel } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { ConfirmSheet, Sheet } from "@/components/ui/sheet";
@@ -60,78 +61,87 @@ export function SettingsView(props: {
   }
 
   return (
-    <div className="space-y-4 pb-6">
-      <Card>
-        <CardHeader title="הפרופיל שלי" subtitle={props.email} />
-        <div className="px-5 pb-5">
+    <div className="pb-6">
+      {/* Profile — Apple ID style */}
+      <Card className="mb-8 flex flex-col items-center px-4 pt-6 pb-4 text-center">
+        <span className="grid size-20 place-items-center rounded-full bg-gradient-to-br from-[#ff9500] to-[#ff2d55] text-[34px] font-semibold text-white shadow-[0_10px_30px_-10px_rgba(255,45,85,0.6)]">
+          {props.displayName.slice(0, 1) || "?"}
+        </span>
+        <div className="title-2 mt-3">{props.displayName || "ללא שם"}</div>
+        <div className="footnote num text-muted">{props.email}</div>
+        <div className="mt-4 w-full">
           <InlineEdit initial={props.displayName} label="השם שלי" onSave={(name) => run(() => updateDisplayName({ name }), "השם עודכן")} />
         </div>
       </Card>
 
-      <Card>
-        <CardHeader title="משק הבית" />
-        <div className="px-5 pb-5">
-          {props.isOwner ? (
-            <InlineEdit initial={props.householdName} label="שם משק הבית" onSave={(name) => run(() => renameHousehold({ name }), "השם עודכן")} />
-          ) : (
-            <p className="font-medium">{props.householdName}</p>
-          )}
-        </div>
+      <SectionLabel>משק הבית</SectionLabel>
+      <Card className="mb-8 px-4 py-3">
+        {props.isOwner ? (
+          <InlineEdit initial={props.householdName} label="שם משק הבית" onSave={(name) => run(() => renameHousehold({ name }), "השם עודכן")} />
+        ) : (
+          <p className="text-[17px]">{props.householdName}</p>
+        )}
       </Card>
 
-      <Card>
-        <CardHeader
-          title="חברי הבית"
-          action={
-            props.isOwner && (
-              <Button size="sm" variant="soft" onClick={() => setInviteOpen(true)}>
-                <UserPlus /> הזמנה
-              </Button>
-            )
-          }
-        />
-        <ul className="divide-y divide-border/70 px-5 pb-2">
-          {props.members.map((m) => (
-            <li key={m.userId} className="flex items-center gap-3 py-3">
-              <div className="grid size-10 place-items-center rounded-full bg-primary-soft font-semibold text-primary">
-                {m.name.slice(0, 1) || "?"}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 font-medium">
-                  {m.name || "ללא שם"}
-                  {m.userId === props.currentUserId && <span className="text-xs text-muted">(את/ה)</span>}
-                </div>
-                <div className="text-xs text-muted">{m.role === "owner" ? "בעלים" : "חבר/ה"}</div>
-              </div>
-              {m.role === "owner" && <Crown className="size-4 text-amber" aria-label="בעלים" />}
-              {(props.isOwner || m.userId === props.currentUserId) && (
-                <Button
-                  size="icon-sm"
-                  variant="danger-ghost"
-                  aria-label={m.userId === props.currentUserId ? "עזיבת משק הבית" : `הסרת ${m.name}`}
-                  onClick={() => setConfirmMember({ userId: m.userId, name: m.name })}
-                >
-                  {m.userId === props.currentUserId ? <LogOut /> : <X />}
-                </Button>
+      <SectionLabel>חברי הבית</SectionLabel>
+      <Card className="hairline-list-inset mb-8 [--separator-inset:4rem]">
+        {props.members.map((m, i) => (
+          <div key={m.userId} className="flex min-h-14 items-center gap-3 px-4 py-2">
+            <span
+              className={cn(
+                "grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br text-[17px] font-semibold text-white",
+                i % 2 ? "from-[#5856d6] to-[#007aff]" : "from-[#ff9500] to-[#ff2d55]",
               )}
-            </li>
-          ))}
-        </ul>
-        {props.invitations.length > 0 && (
-          <div className="border-t border-border/70 px-5 py-3">
-            <p className="mb-2 text-xs font-medium text-muted">הזמנות פתוחות</p>
-            <ul className="space-y-2">
-              {props.invitations.map((inv) => (
-                <li key={inv.id} className="flex items-center gap-2 text-sm">
-                  <span className="num min-w-0 flex-1 truncate">{inv.email ?? "קישור פתוח"}</span>
-                  <span className="text-xs text-muted">עד {formatShortDate(inv.expires_at)}</span>
-                  <Button size="sm" variant="ghost" onClick={() => run(() => revokeInvitation(inv.id), "ההזמנה בוטלה")}>
-                    ביטול
-                  </Button>
-                </li>
-              ))}
-            </ul>
+            >
+              {m.name.slice(0, 1) || "?"}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5 text-[17px]">
+                {m.name || "ללא שם"}
+                {m.role === "owner" && <Crown className="size-4 text-amber" aria-label="בעלים" />}
+              </span>
+              <span className="footnote block text-muted">
+                {m.role === "owner" ? "בעלים" : "חבר/ה"}
+                {m.userId === props.currentUserId && " · את/ה"}
+              </span>
+            </span>
+            {(props.isOwner || m.userId === props.currentUserId) && (
+              <Button
+                size="sm"
+                variant="danger-ghost"
+                aria-label={m.userId === props.currentUserId ? "עזיבת משק הבית" : `הסרת ${m.name}`}
+                onClick={() => setConfirmMember({ userId: m.userId, name: m.name })}
+              >
+                {m.userId === props.currentUserId ? "עזיבה" : "הסרה"}
+              </Button>
+            )}
           </div>
+        ))}
+        {props.invitations.map((inv) => (
+          <div key={inv.id} className="flex min-h-12 items-center gap-3 px-4 py-2">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-fill text-muted">
+              <UserPlus className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="num block truncate text-[17px]">{inv.email ?? "קישור הזמנה פתוח"}</span>
+              <span className="footnote block text-muted">ממתין · עד {formatShortDate(inv.expires_at)}</span>
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => run(() => revokeInvitation(inv.id), "ההזמנה בוטלה")}>
+              ביטול
+            </Button>
+          </div>
+        ))}
+        {props.isOwner && (
+          <ListRow
+            onClick={() => setInviteOpen(true)}
+            chevron={false}
+            icon={
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
+                <UserPlus className="size-5" />
+              </span>
+            }
+            title={<span className="text-primary">הזמנת בן/בת הזוג</span>}
+          />
         )}
       </Card>
 
@@ -139,8 +149,9 @@ export function SettingsView(props: {
       <ListEditor title="קטגוריות מוצרים" items={props.categories} onAdd={(name) => run(() => addCategory({ name }))} onDelete={(id) => run(() => deleteCategory(id))} />
       <ListEditor title="מקומות אחסון" items={props.locations} onAdd={(name) => run(() => addLocation({ name }))} onDelete={(id) => run(() => deleteLocation(id))} />
 
-      <Card className="flex items-center justify-between px-5 py-3">
-        <span className="font-medium">מצב תצוגה</span>
+      <SectionLabel>תצוגה</SectionLabel>
+      <Card className="mb-8 flex min-h-12 items-center justify-between px-4 py-2">
+        <span className="text-[17px]">מצב כהה / בהיר</span>
         <ThemeToggle />
       </Card>
 
@@ -152,9 +163,11 @@ export function SettingsView(props: {
           void import("idb-keyval").then((m) => m.clear()).catch(() => undefined);
         }}
       >
-        <Button type="submit" variant="outline" className="w-full">
-          <LogOut /> התנתקות
-        </Button>
+        <Card>
+          <button type="submit" className="flex min-h-12 w-full items-center justify-center text-[17px] text-danger active:bg-fill">
+            התנתקות
+          </button>
+        </Card>
       </form>
 
       <Sheet open={inviteOpen} onOpenChange={setInviteOpen} title="הזמנה למשק הבית" description="שלחו את הקישור למי שגר איתכם">
@@ -219,22 +232,24 @@ function ListEditor({
 }) {
   const [value, setValue] = useState("");
   return (
-    <Card>
-      <CardHeader title={title} subtitle={`${items.length} פריטים`} />
-      <div className="px-5 pb-5">
+    <>
+      <SectionLabel>
+        {title} · <span className="num">{items.length}</span>
+      </SectionLabel>
+      <Card className="mb-8 px-4 py-3">
         <div className="flex flex-wrap gap-2">
           {items.map((i) => (
-            <Badge key={i.id} className="h-8 gap-1 pe-1 ps-3 text-sm">
+            <span key={i.id} className="inline-flex h-8 items-center gap-1 rounded-full bg-fill ps-3 pe-1 text-[15px]">
               {i.name}
               <button
                 type="button"
-                className="grid size-6 place-items-center rounded-full hover:bg-surface-3"
+                className="grid size-6 place-items-center rounded-full text-muted active:bg-fill-strong"
                 aria-label={`מחיקת ${i.name}`}
                 onClick={() => onDelete(i.id)}
               >
-                <Trash2 className="size-3.5" />
+                <X className="size-3.5" strokeWidth={2.75} />
               </button>
-            </Badge>
+            </span>
           ))}
         </div>
         <form
@@ -245,12 +260,12 @@ function ListEditor({
             setValue("");
           }}
         >
-          <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder="הוספה…" maxLength={60} className="h-10" />
-          <Button type="submit" size="icon-sm" variant="secondary" aria-label="הוספה" className="size-10">
-            <Plus />
+          <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder="הוספה…" maxLength={60} className="h-9" />
+          <Button type="submit" size="icon-sm" aria-label="הוספה" className="size-9">
+            <Plus strokeWidth={2.75} />
           </Button>
         </form>
-      </div>
-    </Card>
+      </Card>
+    </>
   );
 }

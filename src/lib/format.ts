@@ -83,8 +83,10 @@ export function timeAgo(value: string | Date, now = new Date()): string {
   const sec = Math.round((d.getTime() - now.getTime()) / 1000);
   const abs = Math.abs(sec);
   if (abs < 60) return "הרגע";
-  if (abs < 3600) return rtf.format(Math.round(sec / 60), "minute");
-  if (abs < 86_400) return rtf.format(Math.round(sec / 3600), "hour");
-  if (abs < 86_400 * 30) return rtf.format(Math.round(sec / 86_400), "day");
+  // ICU appends "(2)" / "(1)" to Hebrew dual/singular forms; strip it.
+  const clean = (s: string) => s.replace(/\s*\(\d+\)/, "");
+  if (abs < 3600) return clean(rtf.format(Math.round(sec / 60), "minute"));
+  if (abs < 86_400) return clean(rtf.format(Math.round(sec / 3600), "hour"));
+  if (abs < 86_400 * 30) return clean(rtf.format(Math.round(sec / 86_400), "day"));
   return formatShortDate(d);
 }

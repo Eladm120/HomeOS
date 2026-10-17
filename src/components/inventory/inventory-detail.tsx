@@ -21,7 +21,8 @@ import { applyInventoryMovement, archiveInventoryItem, deleteInventoryItem } fro
 import { addInventoryItemToList } from "@/server/actions/grocery";
 import type { InventoryItem, InventoryLocation, InventoryMovement, InventoryMovementKind, ProductCategory } from "@/lib/types";
 import { MOVEMENT_LABELS, daysSinceVerified, estimateDepletion, expiryState, stockLevel } from "@/lib/inventory-logic";
-import { formatQuantity, formatShortDate, relativeDays, timeAgo } from "@/lib/format";
+import { formatQuantity, formatShortDate, relativeDays } from "@/lib/format";
+import { RelativeTime } from "@/components/ui/relative-time";
 import { primeSignedUrls } from "@/lib/media";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { cn } from "@/lib/utils";
@@ -186,7 +187,7 @@ export function InventoryDetail({
               <div className="mt-4 flex items-center gap-2 rounded-2xl bg-surface-2 px-3 py-2.5 text-sm">
                 <CheckCheck className={cn("size-4", verifiedDays !== null && verifiedDays <= 14 ? "text-sage" : "text-muted")} />
                 <span className="flex-1 text-muted">
-                  {item.last_verified_at ? `נספר לאחרונה ${timeAgo(item.last_verified_at)}` : "הכמות לא נספרה עדיין"}
+                  {item.last_verified_at ? <RelativeTime value={item.last_verified_at} prefix="נספר לאחרונה " /> : "הכמות לא נספרה עדיין"}
                 </span>
                 <button type="button" onClick={verifyNow} className="font-medium text-primary">
                   הכמות נכונה
@@ -211,7 +212,7 @@ export function InventoryDetail({
                   )
                 }
               />
-              <Info label="נקנה לאחרונה" value={item.last_purchased_at ? timeAgo(item.last_purchased_at) : "—"} />
+              <Info label="נקנה לאחרונה" value={item.last_purchased_at ? <RelativeTime value={item.last_purchased_at} /> : "—"} />
               {item.barcode && <Info label="ברקוד" value={<span className="num">{item.barcode}</span>} />}
             </dl>
             {item.notes && <p className="mt-4 rounded-2xl bg-surface-2 p-3 text-sm whitespace-pre-wrap">{item.notes}</p>}
@@ -263,7 +264,8 @@ export function InventoryDetail({
                       {m.kind === "transfer" && <span className="font-normal text-muted"> · {locName(m.from_location_id)} ← {locName(m.to_location_id)}</span>}
                     </div>
                     <div className="truncate text-xs text-muted">
-                      {[memberNames[m.created_by ?? ""], timeAgo(m.created_at), m.source === "grocery" ? "מרשימת הקניות" : null, m.note].filter(Boolean).join(" · ")}
+                      <RelativeTime value={m.created_at} />
+                      {[memberNames[m.created_by ?? ""], m.source === "grocery" ? "מרשימת הקניות" : null, m.note].filter(Boolean).map((s) => ` · ${s}`).join("")}
                     </div>
                   </div>
                   <span className="num text-xs text-muted">= {formatQuantity(m.quantity_after)}</span>

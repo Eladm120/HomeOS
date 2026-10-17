@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ClipboardList, Home, Plus, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, ClipboardList, Plus, UserPlus } from "lucide-react";
+import { AppGlyph } from "@/components/layout/app-nav";
 import { createHousehold, updateDisplayName } from "@/server/actions/household";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -95,9 +96,7 @@ export function OnboardingFlow({
       {step === "welcome" && (
         <form onSubmit={submitWelcome} className="space-y-6">
           <div className="text-center">
-            <div className="mx-auto mb-4 grid size-16 place-items-center rounded-[1.4rem] bg-primary text-primary-foreground shadow-lift">
-              <Home className="size-8" />
-            </div>
+            <AppGlyph className="mx-auto mb-5 size-20" />
             <h1 className="text-2xl font-semibold">{memberMode ? `ברוכים הבאים ל${existingName}` : "ברוכים הבאים ל-HomeOS"}</h1>
             <p className="mt-2 text-muted">כמה פרטים קטנים, ואנחנו מתחילים.</p>
           </div>

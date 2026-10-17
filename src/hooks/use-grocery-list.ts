@@ -25,11 +25,14 @@ export function useGroceryList({
   initialItems,
   signedUrls,
   renderedAt,
+  preview = false,
 }: {
   householdId: string;
   initialItems: ShoppingListItem[];
   signedUrls: Record<string, string>;
   renderedAt: number;
+  /** Design preview: local state only, no server sync. */
+  preview?: boolean;
 }) {
   const [items, setItems] = useState<ShoppingListItem[]>(initialItems);
   const [queue, setQueue] = useState<StatusOp[]>([]);
@@ -110,6 +113,10 @@ export function useGroceryList({
 
   // Realtime: other members' changes appear instantly. RLS filters rows.
   useEffect(() => {
+    if (preview) {
+      setSync("live");
+      return;
+    }
     const supabase = getSupabaseBrowser();
     let cancelled = false;
     const channel = supabase.channel(`grocery:${householdId}`);
@@ -155,14 +162,18 @@ export function useGroceryList({
       window.removeEventListener("offline", goOffline);
       void supabase.removeChannel(channel);
     };
-  }, [householdId, refetch, flush]);
+  }, [householdId, refetch, flush, preview]);
 
   const setStatus = useCallback(
     (item: ShoppingListItem, status: ShoppingItemStatus) => {
+      if (preview) {
+        setItems((cur) => cur.map((i) => (i.id === item.id ? { ...i, status, version: i.version + 1 } : i)));
+        return;
+      }
       commitQueue(enqueueOp(queueRef.current, { itemId: item.id, status, baseVersion: item.version, queuedAt: Date.now() }));
       void flush();
     },
-    [commitQueue, flush],
+    [commitQueue, flush, preview],
   );
 
   const upsertLocal = useCallback((row: ShoppingListItem) => setItems((cur) => mergeRealtimeRow(cur, row)), []);

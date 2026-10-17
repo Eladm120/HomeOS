@@ -2,60 +2,88 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Warm-neutral palette. Tokens are the single source of truth for color. */
+/* =============================================================================
+   HomeOS design language — Apple system colors + Liquid Glass materials.
+   Token names are semantic; values follow Apple's Human Interface palette.
+   ========================================================================== */
 :root {
-  --background: #f8f5f0;
+  /* Grouped backgrounds */
+  --background: #f2f2f7;
   --surface: #ffffff;
-  --surface-2: #f2ede5;
-  --surface-3: #e9e2d7;
-  --foreground: #2a241f;
-  --muted: #776c62;
-  --border: #e6dfd4;
-  --ring: #c56b44;
+  --surface-2: #f2f2f7;
+  --surface-3: #e5e5ea;
+  --fill: rgba(120, 120, 128, 0.12);
+  --fill-strong: rgba(120, 120, 128, 0.2);
 
-  --primary: #b9603b;
-  --primary-hover: #a5532f;
-  --primary-soft: #f6e6dc;
+  /* Labels */
+  --foreground: #000000;
+  --muted: rgba(60, 60, 67, 0.6);
+  --muted-2: rgba(60, 60, 67, 0.3);
+  --border: rgba(60, 60, 67, 0.18);
+  --ring: #007aff;
+
+  /* Tint + system colors */
+  --primary: #007aff;
+  --primary-hover: #0066d6;
+  --primary-soft: rgba(0, 122, 255, 0.12);
   --primary-foreground: #ffffff;
+  --sage: #34c759;
+  --sage-soft: rgba(52, 199, 89, 0.14);
+  --amber: #ff9500;
+  --amber-soft: rgba(255, 149, 0, 0.14);
+  --danger: #ff3b30;
+  --danger-soft: rgba(255, 59, 48, 0.12);
+  --sky: #5856d6;
+  --sky-soft: rgba(88, 86, 214, 0.12);
+  --teal: #30b0c7;
+  --pink: #ff2d55;
+  --yellow: #ffcc00;
+  --purple: #af52de;
 
-  --sage: #5f8466;
-  --sage-soft: #e3ece2;
-  --amber: #b97a1e;
-  --amber-soft: #f7ebd5;
-  --danger: #b6443a;
-  --danger-soft: #f6e0dc;
-  --sky: #4b7a9c;
-  --sky-soft: #e0eaf1;
+  /* Liquid Glass */
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
 
-  --shadow-color: 32 22% 30%;
-  --radius: 1.1rem;
+  --radius: 1.375rem;
 }
 
 .dark {
-  --background: #161311;
-  --surface: #1f1b18;
-  --surface-2: #29241f;
-  --surface-3: #342d27;
-  --foreground: #f2ece5;
-  --muted: #a79b8e;
-  --border: #3a322b;
-  --ring: #e08a5f;
+  --background: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --surface-3: #3a3a3c;
+  --fill: rgba(120, 120, 128, 0.24);
+  --fill-strong: rgba(120, 120, 128, 0.36);
 
-  --primary: #df8a5e;
-  --primary-hover: #e89a72;
-  --primary-soft: #3a2a21;
-  --primary-foreground: #1b1411;
+  --foreground: #ffffff;
+  --muted: rgba(235, 235, 245, 0.6);
+  --muted-2: rgba(235, 235, 245, 0.3);
+  --border: rgba(84, 84, 88, 0.6);
+  --ring: #0a84ff;
 
-  --sage: #8fb795;
-  --sage-soft: #233027;
-  --amber: #e0a94f;
-  --amber-soft: #352a19;
-  --danger: #e57b70;
-  --danger-soft: #3a2220;
-  --sky: #86b3d4;
-  --sky-soft: #1e2a33;
+  --primary: #0a84ff;
+  --primary-hover: #409cff;
+  --primary-soft: rgba(10, 132, 255, 0.2);
+  --primary-foreground: #ffffff;
+  --sage: #30d158;
+  --sage-soft: rgba(48, 209, 88, 0.18);
+  --amber: #ff9f0a;
+  --amber-soft: rgba(255, 159, 10, 0.18);
+  --danger: #ff453a;
+  --danger-soft: rgba(255, 69, 58, 0.18);
+  --sky: #5e5ce6;
+  --sky-soft: rgba(94, 92, 230, 0.2);
+  --teal: #40c8e0;
+  --pink: #ff375f;
+  --yellow: #ffd60a;
+  --purple: #bf5af2;
 
-  --shadow-color: 0 0% 0%;
+  --glass-bg: rgba(40, 40, 44, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 @theme inline {
@@ -63,8 +91,11 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-fill: var(--fill);
+  --color-fill-strong: var(--fill-strong);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
   --color-border: var(--border);
   --color-ring: var(--ring);
   --color-primary: var(--primary);
@@ -79,45 +110,161 @@
   --color-danger-soft: var(--danger-soft);
   --color-sky: var(--sky);
   --color-sky-soft: var(--sky-soft);
+  --color-teal: var(--teal);
+  --color-pink: var(--pink);
+  --color-yellow: var(--yellow);
+  --color-purple: var(--purple);
 
-  --font-sans: var(--font-rubik), system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* SF on Apple devices (incl. SF Hebrew), Heebo elsewhere */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Hebrew", var(--font-heebo), system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Hebrew", var(--font-heebo), system-ui, sans-serif;
 
-  --radius-card: var(--radius);
-  --shadow-soft: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 4px 16px -6px hsl(var(--shadow-color) / 0.12);
-  --shadow-lift: 0 2px 4px hsl(var(--shadow-color) / 0.06), 0 12px 32px -10px hsl(var(--shadow-color) / 0.22);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 12px rgba(0, 0, 0, 0.04);
+  --shadow-lift: 0 10px 40px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.06);
 
-  --animate-fade-up: fade-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  --animate-pop: pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pop: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-sheet-up: sheet-up 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-scale-in: scale-in 0.35s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes pop {
-  0% { transform: scale(1); }
-  45% { transform: scale(1.18); }
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.15); }
   100% { transform: scale(1); }
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes aurora {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate(-6%, 4%) rotate(180deg) scale(1.15); }
+  100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+}
+@keyframes glow-spin {
+  to { --glow-angle: 360deg; }
+}
+@property --glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  font-feature-settings: "kern";
+  letter-spacing: -0.01em;
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
 }
 
 ::selection { background: var(--primary-soft); }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
-:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+@layer components {
+  /* ---- Liquid Glass material ------------------------------------------------ */
+  .glass {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    backdrop-filter: blur(28px) saturate(190%);
+    border: 0.5px solid var(--glass-border);
+    box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  }
+  .glass-thin {
+    background: color-mix(in srgb, var(--background) 72%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  /* ---- Typography ------------------------------------------------------------ */
+  .large-title {
+    font-family: var(--font-display);
+    font-size: 2.125rem;
+    line-height: 1.12;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+  .title-2 { font-family: var(--font-display); font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; }
+  .headline { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.015em; }
+  .footnote { font-size: 0.8125rem; letter-spacing: -0.005em; }
+  .caption { font-size: 0.75rem; letter-spacing: 0; }
+  .section-label { font-size: 0.8125rem; font-weight: 400; text-transform: none; color: var(--muted); padding-inline: 1rem; }
+
+  /* ---- Apple Intelligence glow ------------------------------------------- */
+  .ai-glow { position: relative; isolation: isolate; }
+  .ai-glow::before {
+    content: "";
+    position: absolute;
+    inset: -1.5px;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(from var(--glow-angle), #ff9500, #ff2d55, #af52de, #5856d6, #007aff, #30b0c7, #ff9500);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: glow-spin 6s linear infinite;
+    z-index: -1;
+  }
+  .ai-glow::after {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border-radius: inherit;
+    background: conic-gradient(from var(--glow-angle), #ff9500, #ff2d55, #af52de, #5856d6, #007aff, #30b0c7, #ff9500);
+    filter: blur(28px);
+    opacity: 0.16;
+    animation: glow-spin 6s linear infinite;
+    z-index: -2;
+  }
+
+  /* ---- Ambient aurora background ------------------------------------------- */
+  .aurora { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .aurora::before, .aurora::after {
+    content: "";
+    position: absolute;
+    width: 70vmax;
+    height: 70vmax;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    animation: aurora 28s ease-in-out infinite;
+  }
+  .aurora::before { top: -35vmax; inset-inline-end: -20vmax; background: radial-gradient(circle, #ff9500 0%, #ff2d55 40%, transparent 70%); }
+  .aurora::after { top: -25vmax; inset-inline-start: -30vmax; background: radial-gradient(circle, #5856d6 0%, #007aff 45%, transparent 70%); animation-duration: 34s; animation-direction: reverse; }
+  .dark .aurora::before, .dark .aurora::after { opacity: 0.22; }
+
+  /* ---- Hairline separators (inset grouped lists) ----------------------------- */
+  .hairline-list > * + * { box-shadow: inset 0 0.5px 0 var(--border); }
+  .hairline-list-inset > * + * { position: relative; }
+  .hairline-list-inset > * + *::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline-start: var(--separator-inset, 1rem);
+    inset-inline-end: 0;
+    height: 0.5px;
+    background: var(--border);
+  }
+
+  .pressable { transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s; }
+  .pressable:active { transform: scale(0.96); }
 }
 
 /* iOS safe areas */
@@ -131,5 +278,5 @@ body {
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

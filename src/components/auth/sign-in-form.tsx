@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { KeyRound, Mail, MailCheck } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { Field, Input, Segmented } from "@/components/ui/field";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 type Mode = "code" | "password";
 type Step = "email" | "verify" | "check-inbox";
@@ -89,7 +88,7 @@ export function SignInForm({ nextPath, initialError }: { nextPath: string; initi
 
   if (step === "check-inbox") {
     return (
-      <Card className="p-6 text-center">
+      <Card className="glass p-6 text-center">
         <MailCheck className="mx-auto mb-3 size-10 text-sage" />
         <h2 className="text-lg font-semibold">בדקו את תיבת המייל</h2>
         <p className="mt-1 text-sm text-muted">
@@ -103,34 +102,21 @@ export function SignInForm({ nextPath, initialError }: { nextPath: string; initi
   }
 
   return (
-    <Card className="p-5">
-      <div role="tablist" className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1">
-        {(
-          [
-            ["code", "קישור למייל", Mail],
-            ["password", "סיסמה", KeyRound],
-          ] as const
-        ).map(([m, label, Icon]) => (
-          <button
-            key={m}
-            role="tab"
-            type="button"
-            aria-selected={mode === m}
-            onClick={() => {
-              setMode(m);
-              setStep("email");
-              setError(undefined);
-            }}
-            className={cn(
-              "flex h-10 items-center justify-center gap-2 rounded-full text-sm font-medium transition-all",
-              mode === m ? "bg-surface text-foreground shadow-soft" : "text-muted",
-            )}
-          >
-            <Icon className="size-4" />
-            {label}
-          </button>
-        ))}
-      </div>
+    <Card className="glass p-5">
+      <Segmented
+        label="שיטת התחברות"
+        className="mb-5"
+        value={mode}
+        onChange={(m) => {
+          setMode(m);
+          setStep("email");
+          setError(undefined);
+        }}
+        options={[
+          { value: "code", label: <span className="inline-flex items-center gap-1.5"><Mail className="size-4" />קישור למייל</span> },
+          { value: "password", label: <span className="inline-flex items-center gap-1.5"><KeyRound className="size-4" />סיסמה</span> },
+        ]}
+      />
 
       {mode === "code" && step === "email" && (
         <form onSubmit={sendCode} className="space-y-4">

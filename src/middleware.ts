@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured, publicEnv } from "@/lib/env";
 
-const PUBLIC_PATHS = ["/sign-in", "/auth", "/invite", "/setup", "/offline"];
+const PUBLIC_PATHS = ["/sign-in", "/auth", "/invite", "/setup", "/offline", ...(process.env.NODE_ENV === "development" ? ["/preview"] : [])];
 
 export async function middleware(request: NextRequest) {
   if (!isSupabaseConfigured()) {

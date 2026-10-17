@@ -14,8 +14,9 @@ export default async function OnboardingPage() {
   const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,var(--primary-soft),transparent_55%)] px-5 py-10">
-      <div className="mx-auto w-full max-w-md">
+    <div className="relative min-h-dvh overflow-hidden px-5 py-10">
+      <div className="aurora" aria-hidden />
+      <div className="relative mx-auto w-full max-w-md">
         <OnboardingFlow
           hasHousehold={!!ctx}
           isOwner={ctx?.role === "owner"}

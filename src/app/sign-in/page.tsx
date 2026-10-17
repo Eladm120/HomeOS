@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SignInForm } from "@/components/auth/sign-in-form";
+import { AppGlyph } from "@/components/layout/app-nav";
 import { getUser } from "@/server/context";
 import { safeNextPath } from "@/lib/utils";
 
@@ -12,16 +13,17 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   if (await getUser()) redirect(nextPath);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top,var(--primary-soft),transparent_60%)] px-5 py-10">
-      <div className="w-full max-w-sm animate-fade-up">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 grid size-16 place-items-center rounded-[1.4rem] bg-primary text-2xl font-bold text-primary-foreground shadow-lift">
-            H
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight">HomeOS</h1>
-          <p className="mt-2 text-muted">הבית שלכם, מסודר. במקום אחד, ביחד.</p>
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-5 py-10">
+      <div className="aurora" aria-hidden />
+      <div className="relative w-full max-w-sm">
+        <div className="mb-8 flex animate-fade-up flex-col items-center text-center">
+          <AppGlyph className="mb-5 size-[88px]" />
+          <h1 className="large-title">HomeOS</h1>
+          <p className="mt-2 text-[17px] text-muted">הבית שלכם. מסודר, משותף, חכם.</p>
         </div>
-        <SignInForm nextPath={nextPath} initialError={error ? "ההתחברות נכשלה או שהקישור פג. נסו שוב." : undefined} />
+        <div className="animate-fade-up [animation-delay:120ms]">
+          <SignInForm nextPath={nextPath} initialError={error ? "ההתחברות נכשלה או שהקישור פג. נסו שוב." : undefined} />
+        </div>
       </div>
     </div>
   );

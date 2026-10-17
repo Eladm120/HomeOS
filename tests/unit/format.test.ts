@@ -56,3 +56,13 @@ describe("formatQuantity", () => {
     expect(formatQuantity(0.25)).toBe("0.25");
   });
 });
+
+describe("timeAgo", () => {
+  it("renders Hebrew dual forms without ICU's '(2)' suffix", async () => {
+    const { timeAgo } = await import("@/lib/format");
+    const now = new Date("2026-01-15T12:00:00Z");
+    expect(timeAgo(new Date("2026-01-15T10:00:00Z"), now)).toBe("לפני שעתיים");
+    expect(timeAgo(new Date("2026-01-15T11:00:00Z"), now)).toBe("לפני שעה");
+    expect(timeAgo(new Date("2026-01-15T11:59:30Z"), now)).toBe("הרגע");
+  });
+});

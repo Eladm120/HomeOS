@@ -5,7 +5,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Bottom sheet on mobile, centered dialog on larger screens. */
+/** iOS card sheet: grabber, centered title, glass close button. Centered dialog on desktop. */
 export function Sheet({
   open,
   onOpenChange,
@@ -26,38 +26,42 @@ export function Sheet({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px] data-[state=open]:animate-[fade-up_0.2s_ease-out]" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30 data-[state=open]:animate-[fade-up_0.3s_ease-out]" />
         <Dialog.Content
           dir="rtl"
           className={cn(
-            "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-[1.75rem] border border-border bg-surface shadow-lift outline-none",
-            "data-[state=open]:animate-fade-up",
-            "sm:inset-auto sm:start-1/2 sm:top-1/2 sm:w-[min(560px,calc(100vw-2rem))] sm:-translate-y-1/2 sm:translate-x-1/2 sm:rounded-[1.75rem]",
+            "fixed inset-x-0 bottom-0 z-50 flex max-h-[94dvh] flex-col rounded-t-[2.25rem] bg-background shadow-lift outline-none",
+            "data-[state=open]:animate-sheet-up",
+            "sm:inset-auto sm:start-1/2 sm:top-1/2 sm:max-h-[86dvh] sm:w-[min(540px,calc(100vw-2rem))] sm:translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[2rem] sm:data-[state=open]:animate-scale-in",
             className,
           )}
         >
-          <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-surface-3 sm:hidden" aria-hidden />
-          <div className="flex items-start gap-3 px-5 pt-3 pb-2">
-            <div className="min-w-0 flex-1">
-              <Dialog.Title className="text-lg font-semibold">{title}</Dialog.Title>
+          <div className="mx-auto mt-2 h-[5px] w-9 rounded-full bg-muted-2 sm:hidden" aria-hidden />
+          <div className="relative flex min-h-14 items-center justify-center px-16 pt-2 pb-1">
+            <Dialog.Close
+              className="glass pressable absolute start-4 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-foreground/70"
+              aria-label="סגירה"
+            >
+              <X className="size-[18px]" strokeWidth={2.5} />
+            </Dialog.Close>
+            <div className="min-w-0 text-center">
+              <Dialog.Title className="headline truncate">{title}</Dialog.Title>
               {description ? (
-                <Dialog.Description className="text-sm text-muted">{description}</Dialog.Description>
+                <Dialog.Description className="footnote truncate text-muted">{description}</Dialog.Description>
               ) : (
                 <Dialog.Description className="sr-only">{title}</Dialog.Description>
               )}
             </div>
-            <Dialog.Close className="grid size-9 place-items-center rounded-full text-muted hover:bg-surface-2" aria-label="סגירה">
-              <X className="size-5" />
-            </Dialog.Close>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">{children}</div>
-          {footer && <div className="border-t border-border/70 px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{footer}</div>}
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-2 pb-4">{children}</div>
+          {footer && <div className="px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   );
 }
 
+/** iOS alert. */
 export function ConfirmSheet({
   open,
   onOpenChange,
@@ -80,26 +84,28 @@ export function ConfirmSheet({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/35" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30" />
         <Dialog.Content
           dir="rtl"
-          className="fixed start-1/2 top-1/2 z-50 w-[min(400px,calc(100vw-2rem))] translate-x-1/2 -translate-y-1/2 rounded-3xl border border-border bg-surface p-6 shadow-lift data-[state=open]:animate-fade-up"
+          className="glass fixed start-1/2 top-1/2 z-50 w-[min(300px,calc(100vw-3rem))] translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[1.75rem] text-center data-[state=open]:animate-scale-in"
         >
-          <Dialog.Title className="text-lg font-semibold">{title}</Dialog.Title>
-          <Dialog.Description className="mt-1 text-sm text-muted">{description ?? ""}</Dialog.Description>
-          <div className="mt-6 flex gap-2">
+          <div className="px-5 pt-5 pb-4">
+            <Dialog.Title className="headline">{title}</Dialog.Title>
+            <Dialog.Description className="footnote mt-1 text-foreground/80">{description ?? ""}</Dialog.Description>
+          </div>
+          <div className="flex flex-col gap-2 px-4 pb-4">
             <button
               type="button"
               onClick={onConfirm}
               disabled={loading}
               className={cn(
-                "h-11 flex-1 rounded-full font-medium text-white transition active:scale-[0.97] disabled:opacity-60",
-                destructive ? "bg-danger" : "bg-primary",
+                "pressable h-11 rounded-full text-[17px] font-semibold disabled:opacity-50",
+                destructive ? "bg-danger text-white" : "bg-primary text-white",
               )}
             >
               {confirmLabel}
             </button>
-            <Dialog.Close className="h-11 flex-1 rounded-full bg-surface-2 font-medium">ביטול</Dialog.Close>
+            <Dialog.Close className="pressable h-11 rounded-full bg-fill text-[17px] font-semibold">ביטול</Dialog.Close>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

@@ -16,6 +16,7 @@ import { useOpenFromQuery } from "@/hooks/use-open-from-query";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge, Card, EmptyState } from "@/components/ui/card";
+import { Segmented } from "@/components/ui/field";
 import { SignedImage } from "@/components/media/signed-image";
 import { InventoryItemSheet } from "./inventory-item-sheet";
 
@@ -124,43 +125,29 @@ export function InventoryView({
         </Card>
       ) : (
         <>
-          <div className="mb-3 flex gap-2">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute start-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="חיפוש במלאי"
-                aria-label="חיפוש במלאי"
-                className="h-11 w-full rounded-full border border-border bg-surface ps-11 pe-4 text-[16px] outline-none focus:border-ring"
-              />
-            </div>
+          <div className="relative mb-3">
+            <Search className="pointer-events-none absolute start-3 top-1/2 size-[18px] -translate-y-1/2 text-muted" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="חיפוש"
+              aria-label="חיפוש במלאי"
+              className="h-10 w-full rounded-xl bg-fill ps-10 pe-3 text-[17px] outline-none placeholder:text-muted focus:ring-2 focus:ring-primary/30"
+            />
           </div>
 
-          <div className="scrollbar-none -mx-4 mb-2 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            {(
-              [
-                ["all", "הכול", null],
-                ["low", "חסר / נמוך", counts.low],
-                ["expiring", "תוקף קרוב", counts.expiring],
-              ] as const
-            ).map(([key, label, n]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setFilter(key)}
-                aria-pressed={filter === key}
-                className={cn(
-                  "h-9 shrink-0 rounded-full px-4 text-sm transition-all",
-                  filter === key ? "bg-foreground font-medium text-background" : "bg-surface-2 text-muted",
-                )}
-              >
-                {label}
-                {n ? <span className="num ms-1 opacity-70">{n}</span> : null}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            label="סינון"
+            className="mb-3"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: "all", label: "הכול" },
+              { value: "low", label: "חסר", count: counts.low },
+              { value: "expiring", label: "תוקף", count: counts.expiring },
+            ]}
+          />
           <div className="scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
             {[{ id: "all", name: "כל המיקומים" }, ...locations, { id: "none", name: "ללא מיקום" }].map((l) => (
               <button
@@ -169,8 +156,8 @@ export function InventoryView({
                 onClick={() => setLocation(l.id)}
                 aria-pressed={location === l.id}
                 className={cn(
-                  "h-8 shrink-0 rounded-full border px-3 text-xs transition-all",
-                  location === l.id ? "border-primary bg-primary-soft font-medium text-primary" : "border-border text-muted",
+                  "pressable h-8 shrink-0 rounded-full px-3.5 text-[13px] font-semibold transition-colors",
+                  location === l.id ? "bg-primary text-white" : "bg-fill text-foreground/75",
                 )}
               >
                 {l.name}
@@ -181,20 +168,20 @@ export function InventoryView({
           {filtered.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">אין מוצרים שמתאימים לסינון</p>
           ) : (
-            <Card className="divide-y divide-border/60 p-1">
+            <Card className="hairline-list-inset [--separator-inset:4.5rem]">
               {filtered.map((item) => {
                 const level = stockLevel(item);
                 const exp = expiryState(item.expires_on);
                 return (
-                  <div key={item.id} className="flex items-center gap-3 px-2 py-2.5">
+                  <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
                     <Link href={`/inventory/${item.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                       {item.image_path ? (
-                        <SignedImage path={item.image_path} alt={item.name} className="size-12 shrink-0 rounded-xl border border-border/70" />
+                        <SignedImage path={item.image_path} alt={item.name} className="size-11 shrink-0 rounded-[12px]" />
                       ) : (
-                        <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface-2 text-sm font-semibold text-muted">{item.name.slice(0, 1)}</div>
+                        <div className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-fill text-[17px] font-semibold text-muted">{item.name.slice(0, 1)}</div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium">{item.name}</div>
+                        <div className="truncate text-[17px]">{item.name}</div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                           {locName(item.location_id) && <span>{locName(item.location_id)}</span>}
                           {level === "out" && <Badge tone="danger">נגמר</Badge>}
@@ -210,7 +197,7 @@ export function InventoryView({
                         <ShoppingCart />
                       </Button>
                     )}
-                    <div className="flex shrink-0 items-center rounded-full bg-surface-2">
+                    <div className="flex shrink-0 items-center rounded-full bg-fill">
                       <button
                         type="button"
                         onClick={() => quickMove(item, "consume")}
