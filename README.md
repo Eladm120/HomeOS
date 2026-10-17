@@ -108,14 +108,15 @@ Paste `supabase/tests/rls_isolation.sql` into the SQL Editor and run it. It shou
 
 ---
 
-## Deploying (Vercel recommended)
+## Deployment
 
-1. Import the GitHub repo in Vercel.
-2. Add the three `NEXT_PUBLIC_*` environment variables, with `NEXT_PUBLIC_SITE_URL` set to the production URL.
-3. Add the production `/auth/confirm` URL to the Supabase redirect URLs.
-4. Deploy.
+**Live:** https://homeos-one-psi.vercel.app (Vercel project `homeos`, team `elads-projects-2cf4626c`).
 
-Nothing has been deployed yet. Deployment needs your Vercel and Supabase accounts.
+- Every push to `main` deploys to production automatically (GitHub ↔ Vercel connected).
+- The public Supabase URL and publishable key ship in `.env.production`. They are browser-safe, and RLS enforces access. Never put secrets in that file.
+- Invitation links use the request's own origin, so no site-URL variable is needed.
+- Supabase Auth: the Site URL is the production domain, and both `https://homeos-one-psi.vercel.app/**` and `http://localhost:3000/**` are allowed redirects.
+- Manual deploy from this folder: `npx vercel deploy --prod --scope elads-projects-2cf4626c`.
 
 ---
 
