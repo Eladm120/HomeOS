@@ -100,7 +100,7 @@ export function ConfirmSheet({
               disabled={loading}
               className={cn(
                 "pressable h-11 rounded-full text-[17px] font-semibold disabled:opacity-50",
-                destructive ? "bg-danger text-white" : "bg-primary text-white",
+                destructive ? "bg-danger text-white" : "bg-primary text-primary-foreground",
               )}
             >
               {confirmLabel}

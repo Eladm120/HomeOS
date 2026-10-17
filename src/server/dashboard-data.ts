@@ -3,9 +3,10 @@ import "server-only";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { buildDailyBrief } from "@/lib/daily-brief";
 import { expiryState, stockLevel } from "@/lib/inventory-logic";
-import { formatHebrewCalendarDate, formatLongDate, greetingFor, joinHebrewNames, todayInZone } from "@/lib/format";
+import { addDays, daysUntil, formatHebrewCalendarDate, formatLongDate, greetingFor, joinHebrewNames, relativeDays, todayInZone } from "@/lib/format";
+import { MEAL_SLOT, PROJECT_STATUS } from "@/lib/labels";
 import type { ActivityEvent, InventoryItem, ProductCategory, ShoppingListItem } from "@/lib/types";
-import type { DashboardProps } from "@/components/dashboard/dashboard";
+import type { DashboardModuleCard, DashboardProps } from "@/components/dashboard/dashboard";
 import type { HouseholdContext } from "@/server/context";
 import { signPaths } from "@/server/media";
 
@@ -52,6 +53,7 @@ export async function loadDashboardData(ctx: HouseholdContext): Promise<Omit<Das
     expiringSoon: expiring.filter((x) => x.exp.state === "soon").map((x) => ({ name: x.item.name, days: x.exp.days })),
   });
 
+  const modules = await loadModuleCards(supabase, ctx, now);
   const shownNeeds = needs.slice(0, 8);
   const signedUrls = await signPaths(supabase, shownNeeds.map((i) => i.image_path));
   const names = ctx.members.map((m) => m.profile?.display_name ?? "").filter(Boolean);
@@ -77,6 +79,83 @@ export async function loadDashboardData(ctx: HouseholdContext): Promise<Omit<Das
     isOwner: ctx.role === "owner",
     signedUrls,
     householdId: hid,
-    modules: [],
+    modules,
   };
+}
+
+type Supabase = Awaited<ReturnType<typeof getSupabaseServer>>;
+
+/**
+ * Cards contributed by the other modules. Each query is independent and a
+ * failure (e.g. a module whose migration has not run yet) only hides its card.
+ */
+async function loadModuleCards(supabase: Supabase, ctx: HouseholdContext, now: Date): Promise<DashboardModuleCard[]> {
+  const hid = ctx.household.id;
+  const tz = ctx.household.timezone;
+  const today = todayInZone(now, tz);
+  const soon = addDays(today, 3);
+  const nameOf = (id: string | null) => (id ? ctx.members.find((m) => m.user_id === id)?.profile?.display_name : null);
+
+  const [chores, repairs, meals] = await Promise.all([
+    supabase.from("chores").select("id, title, next_due_on, assignee_id, priority").eq("household_id", hid).eq("status", "active").lte("next_due_on", soon).order("next_due_on").limit(6),
+    supabase
+      .from("home_projects")
+      .select("id, title, kind, status, priority, due_on")
+      .eq("household_id", hid)
+      .not("status", "in", "(completed,canceled,idea)")
+      .order("priority")
+      .order("updated_at", { ascending: false })
+      .limit(5),
+    supabase.from("meal_plan_entries").select("id, slot, title, recipe_id, recipes(title)").eq("household_id", hid).eq("plan_date", today).order("slot"),
+  ]);
+
+  const cards: DashboardModuleCard[] = [];
+  if (!chores.error) {
+    cards.push({
+      key: "chores",
+      title: "משימות קרובות",
+      href: "/chores",
+      tint: "text-foreground",
+      rows: (chores.data ?? []).map((c) => {
+        const d = daysUntil(c.next_due_on as string, now, tz);
+        return {
+          id: c.id as string,
+          title: c.title as string,
+          detail: nameOf(c.assignee_id as string | null) ?? "משותף",
+          href: `/chores/${c.id}`,
+          badge: { text: d < 0 ? "באיחור" : d === 0 ? "היום" : relativeDays(d), tone: d < 0 ? "danger" : d === 0 ? "amber" : "neutral" },
+        };
+      }),
+    });
+  }
+  if (!meals.error && meals.data?.length) {
+    cards.push({
+      key: "meals",
+      title: "מה אוכלים היום",
+      href: "/meals",
+      tint: "text-foreground",
+      rows: meals.data.map((m) => ({
+        id: m.id as string,
+        title: (m.recipes as unknown as { title: string } | null)?.title ?? (m.title as string) ?? "",
+        detail: MEAL_SLOT[m.slot as keyof typeof MEAL_SLOT],
+        href: m.recipe_id ? `/recipes/${m.recipe_id}` : "/meals",
+      })),
+    });
+  }
+  if (!repairs.error) {
+    cards.push({
+      key: "repairs",
+      title: "תיקונים ופרויקטים פתוחים",
+      href: "/projects",
+      tint: "text-foreground",
+      rows: (repairs.data ?? []).map((p) => ({
+        id: p.id as string,
+        title: `${p.kind === "repair" ? "🔧" : "🛠️"} ${p.title}`,
+        detail: PROJECT_STATUS[p.status as keyof typeof PROJECT_STATUS].label,
+        href: `/projects/${p.id}`,
+        badge: p.priority === "high" ? { text: "דחוף", tone: "danger" as const } : undefined,
+      })),
+    });
+  }
+  return cards;
 }

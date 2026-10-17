@@ -11,8 +11,13 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "בית", icon: House },
   { href: "/shopping", label: "קניות", icon: ShoppingBasket },
-  { href: "/household", label: "משק הבית", icon: LayoutGrid, match: ["/inventory", "/household"] },
-  { href: "/recipes", label: "מתכונים", icon: ChefHat },
+  {
+    href: "/household",
+    label: "משק הבית",
+    icon: LayoutGrid,
+    match: ["/inventory", "/household", "/chores", "/projects", "/planner", "/appliances", "/documents", "/plants", "/bills", "/expenses", "/calendar", "/smart-home", "/settings", "/notifications", "/suggestions", "/search"],
+  },
+  { href: "/recipes", label: "מתכונים", icon: ChefHat, match: ["/meals"] },
 ];
 
 export const ASSISTANT_ITEM: NavItem = { href: "/assistant", label: "עוזר AI", icon: Sparkles };

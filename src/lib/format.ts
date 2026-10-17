@@ -2,7 +2,8 @@ export const TIMEZONE = "Asia/Jerusalem";
 export const LOCALE = "he-IL";
 
 const numberFmt = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 3 });
-const currencyFmt = new Intl.NumberFormat(LOCALE, { style: "currency", currency: "ILS" });
+// Whole shekels without ".00"; agorot only when there are some.
+const currencyFmt = new Intl.NumberFormat(LOCALE, { style: "currency", currency: "ILS", minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 export function formatQuantity(qty: number | string | null | undefined): string {
   const n = typeof qty === "string" ? Number(qty) : qty;
@@ -89,4 +90,11 @@ export function timeAgo(value: string | Date, now = new Date()): string {
   if (abs < 86_400) return clean(rtf.format(Math.round(sec / 3600), "hour"));
   if (abs < 86_400 * 30) return clean(rtf.format(Math.round(sec / 86_400), "day"));
   return formatShortDate(d);
+}
+
+/** Shift a YYYY-MM-DD date by whole days (calendar arithmetic, no timezone drift). */
+export function addDays(isoDate: string, n: number): string {
+  const d = new Date(`${isoDate.slice(0, 10)}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
 }

@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ASSISTANT_ITEM, NAV_ITEMS, isActive } from "./nav-items";
 import { ThemeToggle } from "./theme-toggle";
+import { HUB_SECTIONS } from "./hub-sections";
+
+const SIDEBAR_LINKS = HUB_SECTIONS.flatMap((s) => s.items).map((i) => ({ href: i.href, label: i.label }));
 
 /**
  * Floating Liquid Glass tab bar (iOS 26 style): a glass capsule with a sliding
@@ -86,7 +89,7 @@ export function Sidebar({ householdName, forcePath }: { householdName: string; f
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-medium transition-colors",
-                  active ? "bg-primary text-white" : "text-foreground hover:bg-fill",
+                  active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-fill",
                 )}
               >
                 <Icon className="size-5" />
@@ -94,15 +97,18 @@ export function Sidebar({ householdName, forcePath }: { householdName: string; f
               </Link>
             );
           })}
-          <Link
-            href="/inventory"
-            className={cn(
-              "ms-8 flex h-9 items-center rounded-lg px-3 text-[14px] transition-colors",
-              pathname.startsWith("/inventory") ? "font-semibold text-primary" : "text-muted hover:bg-fill",
-            )}
-          >
-            מלאי
-          </Link>
+          {SIDEBAR_LINKS.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={cn(
+                "ms-8 flex h-9 items-center rounded-lg px-3 text-[14px] transition-colors",
+                pathname.startsWith(l.href) ? "font-semibold text-primary" : "text-muted hover:bg-fill",
+              )}
+            >
+              {l.label}
+            </Link>
+          ))}
         </nav>
         <div className="flex justify-end px-1">
           <ThemeToggle />

@@ -1,87 +1,57 @@
-import {
-  Boxes,
-  CalendarDays,
-  FileText,
-  Hammer,
-  Leaf,
-  ListChecks,
-  Lightbulb,
-  Receipt,
-  Refrigerator,
-  Settings,
-  Sofa,
-  type LucideIcon,
-} from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, IconTile, ListRow, SectionLabel } from "@/components/ui/card";
+import { Panel, PanelHeading, PanelRow } from "@/components/ui/panel";
 import { requireHousehold } from "@/server/context";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { HUB_SECTIONS, type HubCounts } from "@/components/layout/hub-sections";
 
 export const metadata = { title: "משק הבית" };
 
-const UPCOMING: { label: string; description: string; icon: LucideIcon; tint: string; phase: number }[] = [
-  { label: "משימות בית", description: "מטלות חוזרות ומי אחראי", icon: ListChecks, tint: "bg-sage", phase: 2 },
-  { label: "פרויקטים ותיקונים", description: "תקלות, טכנאים, הצעות מחיר", icon: Hammer, tint: "bg-amber", phase: 2 },
-  { label: "תכנון רכישות", description: "רהיטים ומוצרים לפי חדר", icon: Sofa, tint: "bg-pink", phase: 2 },
-  { label: "חשבונות והוצאות", description: "חשמל, מים, ארנונה", icon: Receipt, tint: "bg-teal", phase: 4 },
-  { label: "מכשירי חשמל", description: "אחריות וחשבוניות", icon: Refrigerator, tint: "bg-sky", phase: 4 },
-  { label: "מסמכים", description: "כספת מסמכים משותפת", icon: FileText, tint: "bg-[#8e8e93]", phase: 4 },
-  { label: "יומן משותף", description: "טכנאים, משלוחים ואורחים", icon: CalendarDays, tint: "bg-danger", phase: 4 },
-  { label: "צמחים", description: "השקיה ותזכורות", icon: Leaf, tint: "bg-[#30d158]", phase: 4 },
-  { label: "בית חכם", description: "מזגן, דוד ותאורה", icon: Lightbulb, tint: "bg-yellow", phase: 5 },
-];
+async function count(q: PromiseLike<{ count: number | null }>): Promise<number> {
+  const { count: n } = await q;
+  return n ?? 0;
+}
 
 export default async function HouseholdHubPage() {
   const ctx = await requireHousehold();
   const supabase = await getSupabaseServer();
-  const { count } = await supabase
-    .from("inventory_items")
-    .select("id", { count: "exact", head: true })
-    .eq("household_id", ctx.household.id)
-    .is("archived_at", null);
+  const hid = ctx.household.id;
+  const head = { count: "exact" as const, head: true };
+
+  const [inventory, chores, projects, planner, recipes] = await Promise.all([
+    count(supabase.from("inventory_items").select("id", head).eq("household_id", hid).is("archived_at", null)),
+    count(supabase.from("chores").select("id", head).eq("household_id", hid).eq("status", "active")),
+    count(supabase.from("home_projects").select("id", head).eq("household_id", hid).not("status", "in", "(completed,canceled)")),
+    count(supabase.from("planned_purchases").select("id", head).eq("household_id", hid).not("status", "in", "(purchased,canceled)")),
+    count(supabase.from("recipes").select("id", head).eq("household_id", hid)),
+  ]);
+  const counts: HubCounts = { inventory, chores, projects, planner, recipes };
 
   return (
     <>
       <PageHeader title="משק הבית" subtitle={ctx.household.name} />
-
-      <Card className="hairline-list-inset mb-8 [--separator-inset:3.75rem]">
-        <ListRow
-          href="/inventory"
-          icon={
-            <IconTile className="bg-amber">
-              <Boxes />
-            </IconTile>
-          }
-          title="מלאי הבית"
-          trailing={count ? <span className="num">{count}</span> : undefined}
-        />
-        <ListRow
-          href="/household/settings"
-          icon={
-            <IconTile className="bg-[#8e8e93]">
-              <Settings />
-            </IconTile>
-          }
-          title="הגדרות"
-          subtitle="חברי הבית, הזמנות, חדרים"
-        />
-      </Card>
-
-      <SectionLabel>בקרוב</SectionLabel>
-      <Card className="hairline-list-inset [--separator-inset:3.75rem]">
-        {UPCOMING.map((t) => (
-          <div key={t.label} aria-disabled className="flex min-h-14 items-center gap-3 px-4 py-2.5 opacity-60">
-            <IconTile className={t.tint}>
-              <t.icon />
-            </IconTile>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[17px]">{t.label}</span>
-              <span className="footnote block truncate text-muted">{t.description}</span>
-            </span>
-            <span className="footnote shrink-0 text-muted">שלב {t.phase}</span>
-          </div>
+      <div className="space-y-6">
+        {HUB_SECTIONS.map((section) => (
+          <section key={section.title}>
+            <PanelHeading title={section.title} />
+            <Panel>
+              {section.items.map((it) => (
+                <PanelRow
+                  key={it.href}
+                  href={it.href}
+                  leading={
+                    <span aria-hidden className="cat-tint grid size-11 shrink-0 place-items-center rounded-[14px] text-[22px]" style={{ "--h": it.hue } as React.CSSProperties}>
+                      {it.emoji}
+                    </span>
+                  }
+                  title={it.label}
+                  subtitle={it.description}
+                  trailing={it.countKey && counts[it.countKey] ? <span className="num text-[15px] text-muted">{counts[it.countKey]}</span> : undefined}
+                />
+              ))}
+            </Panel>
+          </section>
         ))}
-      </Card>
+      </div>
     </>
   );
 }

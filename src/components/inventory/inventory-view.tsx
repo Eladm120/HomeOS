@@ -157,7 +157,7 @@ export function InventoryView({
                 aria-pressed={location === l.id}
                 className={cn(
                   "pressable h-8 shrink-0 rounded-full px-3.5 text-[13px] font-semibold transition-colors",
-                  location === l.id ? "bg-primary text-white" : "bg-fill text-foreground/75",
+                  location === l.id ? "bg-primary text-primary-foreground" : "bg-fill text-foreground/75",
                 )}
               >
                 {l.name}

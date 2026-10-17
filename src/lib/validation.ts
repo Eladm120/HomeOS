@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const optionalText = (max: number) =>
+export const optionalText = (max: number) =>
   z
     .string()
     .trim()
@@ -9,23 +9,23 @@ const optionalText = (max: number) =>
     .nullable()
     .transform((v) => (v ? v : null));
 
-const optionalId = z
+export const optionalId = z
   .union([z.uuid(), z.literal(""), z.null()])
   .optional()
   .transform((v) => (v ? v : null));
 
-const positiveQty = z.coerce
+export const positiveQty = z.coerce
   .number({ error: "כמות לא תקינה" })
   .positive("הכמות חייבת להיות גדולה מאפס")
   .max(1_000_000);
 
-const nonNegativeQty = z.coerce.number({ error: "כמות לא תקינה" }).min(0, "כמות לא יכולה להיות שלילית").max(1_000_000);
+export const nonNegativeQty = z.coerce.number({ error: "כמות לא תקינה" }).min(0, "כמות לא יכולה להיות שלילית").max(1_000_000);
 
-const optionalNonNegative = z
+export const optionalNonNegative = z
   .union([z.literal(""), z.null(), z.undefined(), nonNegativeQty])
   .transform((v) => (v === "" || v === null || v === undefined ? null : Number(v)));
 
-const optionalDate = z
+export const optionalDate = z
   .union([z.literal(""), z.null(), z.undefined(), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך לא תקין")])
   .transform((v) => (v ? v : null));
 

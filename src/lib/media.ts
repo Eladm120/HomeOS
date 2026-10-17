@@ -6,7 +6,18 @@ import { MEDIA_BUCKET } from "@/lib/env";
 export const MAX_RAW_IMAGE_BYTES = 15 * 1024 * 1024;
 const ACCEPTED = /^image\/(jpeg|png|webp|heic|heif)$/;
 
-export type MediaModule = "grocery" | "inventory" | "catalog";
+export type MediaModule =
+  | "grocery"
+  | "inventory"
+  | "catalog"
+  | "planner"
+  | "projects"
+  | "recipes"
+  | "appliances"
+  | "documents"
+  | "plants"
+  | "receipts"
+  | "bills";
 
 export function thumbPathFor(path: string): string {
   return path.endsWith(".webp") ? path.replace(/\.webp$/, "_thumb.webp") : path;
@@ -61,6 +72,19 @@ export async function uploadHouseholdImage(householdId: string, module: MediaMod
     await bucket.upload(thumbPath, thumb, { contentType: thumb.type, cacheControl: "31536000", upsert: false });
   }
   return path;
+}
+
+// Matches the storage bucket limit (10 MB).
+export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+
+/** PDFs and other documents are uploaded as-is (no re-encoding) into the household folder. */
+export async function uploadHouseholdFile(householdId: string, module: MediaModule, file: File): Promise<{ path: string; mime: string; size: number }> {
+  if (file.type !== "application/pdf") throw new Error("ניתן להעלות קובצי PDF בלבד");
+  if (file.size > MAX_DOCUMENT_BYTES) throw new Error("הקובץ גדול מדי (עד 10MB)");
+  const path = `${householdId}/${module}/${crypto.randomUUID()}.pdf`;
+  const { error } = await getSupabaseBrowser().storage.from(MEDIA_BUCKET).upload(path, file, { contentType: "application/pdf", upsert: false });
+  if (error) throw new Error("העלאת הקובץ נכשלה");
+  return { path, mime: "application/pdf", size: file.size };
 }
 
 export async function removeHouseholdImage(path: string): Promise<void> {
