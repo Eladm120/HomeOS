@@ -3,87 +3,102 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =============================================================================
-   HomeOS design language — Apple system colors + Liquid Glass materials.
-   Token names are semantic; values follow Apple's Human Interface palette.
+   HomeOS design language — calm, warm-neutral home palette ("sage").
+   One accent; neutrals carry a slight tint of it. Category colour lives only in
+   soft tiles (.cat-tint / .cat-ink), so lists stay quiet and readable.
+   Token names are semantic and shared by every component.
    ========================================================================== */
 :root {
+  --accent: #3b7657;
+
   /* Grouped backgrounds */
-  --background: #f2f2f7;
+  --background: color-mix(in oklab, var(--accent) 5%, #f6f6f4);
   --surface: #ffffff;
-  --surface-2: #f2f2f7;
-  --surface-3: #e5e5ea;
-  --fill: rgba(120, 120, 128, 0.12);
-  --fill-strong: rgba(120, 120, 128, 0.2);
+  --surface-2: color-mix(in oklab, var(--accent) 7%, #f0f1ee);
+  --surface-3: color-mix(in oklab, var(--accent) 9%, #e4e6e2);
+  --fill: color-mix(in oklab, #1a1e1c 7%, transparent);
+  --fill-strong: color-mix(in oklab, #1a1e1c 12%, transparent);
 
   /* Labels */
-  --foreground: #000000;
-  --muted: rgba(60, 60, 67, 0.6);
-  --muted-2: rgba(60, 60, 67, 0.3);
-  --border: rgba(60, 60, 67, 0.18);
-  --ring: #007aff;
+  --foreground: #1a1e1c;
+  --muted: color-mix(in oklab, var(--accent) 12%, #666c69);
+  --muted-2: color-mix(in oklab, #1a1e1c 30%, transparent);
+  --border: color-mix(in oklab, #1a1e1c 12%, transparent);
+  --ring: var(--accent);
 
-  /* Tint + system colors */
-  --primary: #007aff;
-  --primary-hover: #0066d6;
-  --primary-soft: rgba(0, 122, 255, 0.12);
+  /* Tint + semantic colours */
+  --primary: var(--accent);
+  --primary-hover: color-mix(in oklab, var(--accent) 85%, #000);
+  --primary-soft: color-mix(in oklab, var(--accent) 13%, #ffffff);
   --primary-foreground: #ffffff;
-  --sage: #34c759;
-  --sage-soft: rgba(52, 199, 89, 0.14);
-  --amber: #ff9500;
-  --amber-soft: rgba(255, 149, 0, 0.14);
-  --danger: #ff3b30;
-  --danger-soft: rgba(255, 59, 48, 0.12);
-  --sky: #5856d6;
-  --sky-soft: rgba(88, 86, 214, 0.12);
-  --teal: #30b0c7;
-  --pink: #ff2d55;
-  --yellow: #ffcc00;
-  --purple: #af52de;
+  --sage: #2f7d4f;
+  --sage-soft: color-mix(in oklab, #2f7d4f 13%, #ffffff);
+  --amber: #9a6100;
+  --amber-soft: #f8eed9;
+  --danger: #c2401c;
+  --danger-soft: #fbe7df;
+  --sky: #3f6a96;
+  --sky-soft: color-mix(in oklab, #3f6a96 13%, #ffffff);
+  --teal: #2d7f86;
+  --pink: #b5476a;
+  --yellow: #a88400;
+  --purple: #7a5296;
 
-  /* Liquid Glass */
-  --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-border: rgba(255, 255, 255, 0.7);
+  /* Category tiles (OKLCH lightness/chroma; hue comes from --h on the element) */
+  --tile-l: 0.945;
+  --tile-c: 0.04;
+  --ink-l: 0.48;
+
+  /* Glass materials (kept subtle) */
+  --glass-bg: color-mix(in oklab, #ffffff 80%, transparent);
+  --glass-border: color-mix(in oklab, #1a1e1c 8%, transparent);
   --glass-highlight: rgba(255, 255, 255, 0.9);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --glass-shadow: 0 1px 2px rgba(25, 35, 30, 0.05), 0 8px 24px rgba(25, 35, 30, 0.07);
 
   --radius: 1.375rem;
 }
 
 .dark {
-  --background: #000000;
-  --surface: #1c1c1e;
-  --surface-2: #2c2c2e;
-  --surface-3: #3a3a3c;
-  --fill: rgba(120, 120, 128, 0.24);
-  --fill-strong: rgba(120, 120, 128, 0.36);
+  --accent: #86c9a3;
 
-  --foreground: #ffffff;
-  --muted: rgba(235, 235, 245, 0.6);
-  --muted-2: rgba(235, 235, 245, 0.3);
-  --border: rgba(84, 84, 88, 0.6);
-  --ring: #0a84ff;
+  --background: color-mix(in oklab, var(--accent) 6%, #0f1211);
+  --surface: color-mix(in oklab, var(--accent) 6%, #181b1a);
+  --surface-2: color-mix(in oklab, var(--accent) 8%, #212524);
+  --surface-3: color-mix(in oklab, var(--accent) 10%, #2b302e);
+  --fill: color-mix(in oklab, #edf0ee 9%, transparent);
+  --fill-strong: color-mix(in oklab, #edf0ee 15%, transparent);
 
-  --primary: #0a84ff;
-  --primary-hover: #409cff;
-  --primary-soft: rgba(10, 132, 255, 0.2);
-  --primary-foreground: #ffffff;
-  --sage: #30d158;
-  --sage-soft: rgba(48, 209, 88, 0.18);
-  --amber: #ff9f0a;
-  --amber-soft: rgba(255, 159, 10, 0.18);
-  --danger: #ff453a;
-  --danger-soft: rgba(255, 69, 58, 0.18);
-  --sky: #5e5ce6;
-  --sky-soft: rgba(94, 92, 230, 0.2);
-  --teal: #40c8e0;
-  --pink: #ff375f;
-  --yellow: #ffd60a;
-  --purple: #bf5af2;
+  --foreground: #edf0ee;
+  --muted: #9ba39f;
+  --muted-2: color-mix(in oklab, #edf0ee 30%, transparent);
+  --border: color-mix(in oklab, #edf0ee 12%, transparent);
+  --ring: var(--accent);
 
-  --glass-bg: rgba(40, 40, 44, 0.55);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-highlight: rgba(255, 255, 255, 0.18);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --primary: var(--accent);
+  --primary-hover: color-mix(in oklab, var(--accent) 85%, #fff);
+  --primary-soft: color-mix(in oklab, var(--accent) 18%, #181b1a);
+  --primary-foreground: #0e1311;
+  --sage: #7fcf9c;
+  --sage-soft: color-mix(in oklab, #7fcf9c 18%, #181b1a);
+  --amber: #e8b25a;
+  --amber-soft: #33291a;
+  --danger: #ff9b72;
+  --danger-soft: #3a231a;
+  --sky: #8fb6e0;
+  --sky-soft: color-mix(in oklab, #8fb6e0 18%, #181b1a);
+  --teal: #7cc8cf;
+  --pink: #e89ab3;
+  --yellow: #e5c75a;
+  --purple: #c4a3dc;
+
+  --tile-l: 0.31;
+  --tile-c: 0.04;
+  --ink-l: 0.82;
+
+  --glass-bg: color-mix(in oklab, #181b1a 82%, transparent);
+  --glass-border: color-mix(in oklab, #edf0ee 10%, transparent);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 
 @theme inline {
@@ -207,7 +222,7 @@ body {
   .caption { font-size: 0.75rem; letter-spacing: 0; }
   .section-label { font-size: 0.8125rem; font-weight: 400; text-transform: none; color: var(--muted); padding-inline: 1rem; }
 
-  /* ---- Apple Intelligence glow ------------------------------------------- */
+  /* ---- Assistant accent: a slow, single-hue ring (no rainbow) ------------ */
   .ai-glow { position: relative; isolation: isolate; }
   .ai-glow::before {
     content: "";
@@ -215,40 +230,17 @@ body {
     inset: -1.5px;
     border-radius: inherit;
     padding: 1.5px;
-    background: conic-gradient(from var(--glow-angle), #ff9500, #ff2d55, #af52de, #5856d6, #007aff, #30b0c7, #ff9500);
+    background: conic-gradient(from var(--glow-angle), var(--accent), color-mix(in oklab, var(--accent) 25%, transparent), var(--teal), color-mix(in oklab, var(--accent) 25%, transparent), var(--accent));
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    animation: glow-spin 6s linear infinite;
+    animation: glow-spin 8s linear infinite;
     z-index: -1;
   }
-  .ai-glow::after {
-    content: "";
-    position: absolute;
-    inset: 8px;
-    border-radius: inherit;
-    background: conic-gradient(from var(--glow-angle), #ff9500, #ff2d55, #af52de, #5856d6, #007aff, #30b0c7, #ff9500);
-    filter: blur(28px);
-    opacity: 0.16;
-    animation: glow-spin 6s linear infinite;
-    z-index: -2;
-  }
 
-  /* ---- Ambient aurora background ------------------------------------------- */
-  .aurora { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-  .aurora::before, .aurora::after {
-    content: "";
-    position: absolute;
-    width: 70vmax;
-    height: 70vmax;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.35;
-    animation: aurora 28s ease-in-out infinite;
-  }
-  .aurora::before { top: -35vmax; inset-inline-end: -20vmax; background: radial-gradient(circle, #ff9500 0%, #ff2d55 40%, transparent 70%); }
-  .aurora::after { top: -25vmax; inset-inline-start: -30vmax; background: radial-gradient(circle, #5856d6 0%, #007aff 45%, transparent 70%); animation-duration: 34s; animation-direction: reverse; }
-  .dark .aurora::before, .dark .aurora::after { opacity: 0.22; }
+  /* ---- Category tiles: soft tint + matching ink, hue set via style={{--h}} -- */
+  .cat-tint { background: oklch(var(--tile-l) var(--tile-c) var(--h, 150)); }
+  .cat-ink { color: oklch(var(--ink-l) 0.11 var(--h, 150)); }
 
   /* ---- Hairline separators (inset grouped lists) ----------------------------- */
   .hairline-list > * + * { box-shadow: inset 0 0.5px 0 var(--border); }

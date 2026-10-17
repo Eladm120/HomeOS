@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { Dashboard } from "@/components/dashboard/dashboard";
 import { GroceryView } from "@/components/grocery/grocery-view";
-import { ShoppingMode } from "@/components/grocery/shopping-mode";
 import { InventoryView } from "@/components/inventory/inventory-view";
 import { BottomNav, Sidebar } from "@/components/layout/app-nav";
 import { buildDailyBrief } from "@/lib/daily-brief";
@@ -53,12 +52,12 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
           })}
           groceryCount={pending.length}
           urgentCount={pending.filter((g) => g.priority === "high").length}
-          recentGrocery={[...pending].reverse().slice(0, 4)}
-          needs={needs.slice(0, 4).map((i) => ({ ...i, onList: i.name.startsWith("חלב") }))}
+          pendingGrocery={pending}
+          categories={categories}
+          needs={needs.slice(0, 8).map((i) => ({ ...i, onList: i.name.startsWith("חלב") }))}
           needsTotal={needs.length}
           expiring={expiring.map((x) => ({ id: x.i.id, name: x.i.name, days: x.e!.days }))}
           inventoryCount={inventory.length}
-          health={{ stock: 0.7, verified: 0.9, fresh: 0.8 }}
           activity={activity}
           memberNames={memberNames}
           members={[
@@ -78,12 +77,6 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
       path = "/shopping";
       content = <GroceryView {...groceryProps} />;
       break;
-    case "mode":
-      return (
-        <div className="mx-auto w-full max-w-3xl px-4">
-          <ShoppingMode {...groceryProps} />
-        </div>
-      );
     case "inventory":
       path = "/inventory";
       content = <InventoryView householdId={HID} items={inventory} locations={locations} categories={categories} signedUrls={{}} />;

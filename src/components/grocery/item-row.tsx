@@ -1,25 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Info } from "lucide-react";
-import type { ShoppingListItem } from "@/lib/types";
+import { Check } from "lucide-react";
+import type { ProductCategory, ShoppingListItem } from "@/lib/types";
 import { formatQuantityWithUnit } from "@/lib/format";
+import { categoryStyle, productEmoji } from "@/lib/category-style";
 import { cn } from "@/lib/utils";
 import { ImageViewer, SignedImage } from "@/components/media/signed-image";
 
-/** Reminders-style circular checkbox that fills with the list color. */
+/** Round checkbox; the check mark pops in when it is ticked. */
 export function CheckCircle({
   checked,
   onToggle,
-  size = "md",
   label,
-  color = "var(--primary)",
+  size = "md",
 }: {
   checked: boolean;
   onToggle: () => void;
-  size?: "md" | "lg";
   label: string;
-  color?: string;
+  size?: "md" | "lg";
 }) {
   return (
     <button
@@ -32,86 +31,92 @@ export function CheckCircle({
         if (navigator.vibrate) navigator.vibrate(8);
         onToggle();
       }}
-      className={cn("grid shrink-0 place-items-center rounded-full transition-all duration-300 active:scale-90", size === "lg" ? "size-9" : "size-[26px]")}
-      style={checked ? { background: color, boxShadow: `0 0 0 0 ${color}` } : { boxShadow: `inset 0 0 0 1.75px var(--muted-2)` }}
+      className={cn(
+        "grid shrink-0 place-items-center rounded-full transition-all duration-300 active:scale-90",
+        size === "lg" ? "size-9" : "size-[30px]",
+        checked ? "bg-primary" : "shadow-[inset_0_0_0_2px_var(--muted-2)]",
+      )}
     >
-      {checked && <Check className={cn("animate-pop text-white", size === "lg" ? "size-5" : "size-[15px]")} strokeWidth={3.25} />}
+      {checked && <Check className={cn("animate-pop text-primary-foreground", size === "lg" ? "size-5" : "size-[17px]")} strokeWidth={3.25} />}
     </button>
+  );
+}
+
+/** Product picture: the uploaded photo when there is one, else a tinted emoji tile. */
+export function ProductThumb({
+  name,
+  imagePath,
+  category,
+  className,
+  onOpenPhoto,
+  dim,
+}: {
+  name: string;
+  imagePath: string | null;
+  category: Pick<ProductCategory, "name" | "icon"> | null;
+  className?: string;
+  onOpenPhoto?: () => void;
+  dim?: boolean;
+}) {
+  const style = categoryStyle(category);
+  const base = cn("size-11 shrink-0 overflow-hidden rounded-[14px] transition-[filter,opacity]", dim && "opacity-60 grayscale-[0.5]", className);
+  if (imagePath) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenPhoto?.();
+        }}
+        className={base}
+        aria-label={`הגדלת תמונה של ${name}`}
+      >
+        <SignedImage path={imagePath} alt={name} className="size-full" />
+      </button>
+    );
+  }
+  return (
+    <span aria-hidden className={cn(base, "cat-tint grid place-items-center text-[24px] leading-none")} style={{ "--h": style.hue } as React.CSSProperties}>
+      {productEmoji(name, category)}
+    </span>
   );
 }
 
 export function GroceryItemRow({
   item,
+  category,
   addedByName,
+  checked,
   onToggle,
   onOpen,
-  large,
-  color,
 }: {
   item: ShoppingListItem;
+  category: Pick<ProductCategory, "name" | "icon"> | null;
   addedByName?: string;
+  /** Visual state; may run ahead of item.status while the check animation plays. */
+  checked: boolean;
   onToggle: () => void;
   onOpen?: () => void;
-  large?: boolean;
-  color?: string;
 }) {
   const [viewer, setViewer] = useState(false);
-  const done = item.status === "purchased";
-  const meta = [item.brand, item.variant].filter(Boolean).join(" · ");
+  const meta = [item.brand, item.variant, item.notes, addedByName].filter(Boolean).join(" · ");
 
   return (
-    <div className={cn("flex items-center gap-3 ps-4 pe-3", large ? "min-h-[76px] py-3" : "min-h-[60px] py-2.5")}>
-      <CheckCircle
-        checked={done}
-        onToggle={onToggle}
-        size={large ? "lg" : "md"}
-        color={color}
-        label={done ? `ביטול סימון ${item.name}` : `סימון ${item.name} כנקנה`}
-      />
+    <div className="flex min-h-[66px] items-center gap-3 py-2.5 ps-3.5 pe-3.5">
+      <CheckCircle checked={checked} onToggle={onToggle} label={checked ? `החזרת ${item.name} לרשימה` : `סימון ${item.name} כנקנה`} />
+      <ProductThumb name={item.name} imagePath={item.image_path} category={category} dim={checked} onOpenPhoto={() => setViewer(true)} />
 
       <button type="button" onClick={onOpen} disabled={!onOpen} className="min-w-0 flex-1 text-start disabled:cursor-default">
-        <span className={cn("flex items-center gap-1.5 transition-colors", done && "text-muted")}>
-          {item.priority === "high" && !done && (
-            <span aria-label="דחוף" className="shrink-0 text-[17px] font-bold" style={{ color: "var(--danger)" }}>
-              !!
-            </span>
+        <span className={cn("flex items-center gap-2 transition-colors", checked && "text-muted")}>
+          <span className={cn("truncate text-[17px] font-medium", checked && "line-through decoration-2")}>{item.name}</span>
+          {item.priority === "high" && !checked && (
+            <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-[12px] font-semibold text-danger">דחוף</span>
           )}
-          <span className={cn("truncate", large ? "text-[20px] font-medium" : "text-[17px]")}>{item.name}</span>
         </span>
-        {(meta || item.notes || (addedByName && !large)) && (
-          <span className="footnote mt-0.5 flex gap-1 truncate text-muted">
-            {(meta || (large && item.notes)) && <span className="truncate">{[meta, large ? item.notes : null].filter(Boolean).join(" · ")}</span>}
-            {!large && addedByName && (
-              <>
-                {meta && <span aria-hidden>·</span>}
-                <span>{addedByName}</span>
-              </>
-            )}
-          </span>
-        )}
+        {meta && <span className="footnote mt-0.5 block truncate text-muted">{meta}</span>}
       </button>
 
-      <span className={cn("num shrink-0 text-muted", large ? "text-[17px] font-semibold" : "text-[15px]")}>{formatQuantityWithUnit(item.quantity, item.unit)}</span>
-
-      {item.image_path && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setViewer(true);
-          }}
-          className={cn("shrink-0 overflow-hidden rounded-[10px] transition-opacity", large ? "size-14" : "size-10", done && "opacity-50")}
-          aria-label={`הגדלת תמונה של ${item.name}`}
-        >
-          <SignedImage path={item.image_path} alt={item.name} className="size-full" />
-        </button>
-      )}
-
-      {onOpen && !large && (
-        <button type="button" onClick={onOpen} className="grid size-8 shrink-0 place-items-center rounded-full text-primary active:bg-fill" aria-label={`פרטים על ${item.name}`}>
-          <Info className="size-[22px]" strokeWidth={1.75} />
-        </button>
-      )}
+      <span className={cn("num shrink-0 text-[15px] text-muted", checked && "opacity-60")}>{formatQuantityWithUnit(item.quantity, item.unit)}</span>
 
       {item.image_path && <ImageViewer path={item.image_path} alt={item.name} open={viewer} onOpenChange={setViewer} />}
     </div>

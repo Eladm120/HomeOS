@@ -1,14 +1,14 @@
-/* HomeOS service worker — offline shell for Shopping Mode.
+/* HomeOS service worker — offline shell for the shopping list.
  * - Static build assets: cache-first (they are content-hashed).
  * - Page navigations: network-first; the last good copy of the shopping pages
  *   is kept so the list opens without connectivity. Data itself is restored
  *   from IndexedDB by the page, and queued check-offs sync when back online.
  * - Never caches API, auth, server actions (POST) or Supabase traffic.
  */
-const VERSION = "homeos-v1";
+const VERSION = "homeos-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
-const OFFLINE_PAGES = ["/shopping/mode", "/shopping"];
+const OFFLINE_PAGES = ["/shopping"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(PAGE_CACHE).then((c) => c.add("/offline")).catch(() => undefined));

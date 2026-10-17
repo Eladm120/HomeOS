@@ -11,21 +11,26 @@ const base: ShoppingListItem = {
   image_path: null, added_by: null, purchased_by: null, purchased_at: null, cleared_at: null, deleted_at: null,
   version: 1, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z",
 };
+const dairy = { name: "מוצרי חלב", icon: "milk" };
 
 describe("GroceryItemRow", () => {
-  it("shows name, brand, quantity and urgency", () => {
-    render(<GroceryItemRow item={base} addedByName="נעה" onToggle={() => {}} />);
+  it("shows name, brand, who added it, quantity and urgency", () => {
+    render(<GroceryItemRow item={base} category={dairy} checked={false} addedByName="נעה" onToggle={() => {}} />);
     expect(screen.getByText("חלב")).toBeInTheDocument();
-    expect(screen.getByText("תנובה · 3%")).toBeInTheDocument();
+    expect(screen.getByText("תנובה · 3% · נעה")).toBeInTheDocument();
     expect(screen.getByText("2 ליטר")).toBeInTheDocument();
-    expect(screen.getByLabelText("דחוף")).toBeInTheDocument();
-    expect(screen.getByText("נעה")).toBeInTheDocument();
+    expect(screen.getByText("דחוף")).toBeInTheDocument();
+  });
+
+  it("shows a product picture when there is no photo", () => {
+    const { container } = render(<GroceryItemRow item={base} category={dairy} checked={false} onToggle={() => {}} />);
+    expect(container.textContent).toContain("🥛");
   });
 
   it("toggles via the checkbox without opening the editor", () => {
     const onToggle = vi.fn();
     const onOpen = vi.fn();
-    render(<GroceryItemRow item={base} onToggle={onToggle} onOpen={onOpen} />);
+    render(<GroceryItemRow item={base} category={null} checked={false} onToggle={onToggle} onOpen={onOpen} />);
     const box = screen.getByRole("checkbox", { name: "סימון חלב כנקנה" });
     expect(box).toHaveAttribute("aria-checked", "false");
     fireEvent.click(box);
@@ -33,8 +38,10 @@ describe("GroceryItemRow", () => {
     expect(onOpen).not.toHaveBeenCalled();
   });
 
-  it("renders purchased items as checked", () => {
-    render(<GroceryItemRow item={{ ...base, status: "purchased" }} onToggle={() => {}} />);
-    expect(screen.getByRole("checkbox", { name: "ביטול סימון חלב" })).toHaveAttribute("aria-checked", "true");
+  it("renders checked items struck through, without the urgency tag", () => {
+    render(<GroceryItemRow item={{ ...base, status: "purchased" }} category={null} checked onToggle={() => {}} />);
+    expect(screen.getByRole("checkbox", { name: "החזרת חלב לרשימה" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText("חלב").className).toContain("line-through");
+    expect(screen.queryByText("דחוף")).not.toBeInTheDocument();
   });
 });
