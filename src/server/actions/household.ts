@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -53,7 +53,7 @@ export async function createInvitation(input: { email?: string }): Promise<Actio
     if (error) return dbFail("invitation.create", error);
     const row = (data as { token: string; expires_at: string }[])[0];
     revalidatePath("/household/settings");
-    return ok({ url: `${publicEnv.siteUrl}/invite/${row.token}`, expiresAt: row.expires_at });
+    return ok({ url: `${await requestOrigin()}/invite/${row.token}`, expiresAt: row.expires_at });
   });
 }
 
@@ -213,4 +213,13 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
   (await cookies()).delete(ACTIVE_HOUSEHOLD_COOKIE);
   redirect("/sign-in");
+}
+
+/** Origin of the current request (works on localhost, previews and production). */
+async function requestOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (!host) return publicEnv.siteUrl;
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
+  return `${proto}://${host}`;
 }
