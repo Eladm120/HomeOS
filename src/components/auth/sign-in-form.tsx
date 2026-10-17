@@ -107,7 +107,7 @@ export function SignInForm({ nextPath, initialError }: { nextPath: string; initi
       <div role="tablist" className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1">
         {(
           [
-            ["code", "קוד למייל", Mail],
+            ["code", "קישור למייל", Mail],
             ["password", "סיסמה", KeyRound],
           ] as const
         ).map(([m, label, Icon]) => (
@@ -139,16 +139,16 @@ export function SignInForm({ nextPath, initialError }: { nextPath: string; initi
           </Field>
           {error && <p role="alert" className="text-sm text-danger">{error}</p>}
           <Button type="submit" className="w-full" size="lg" loading={loading}>
-            שליחת קוד התחברות
+            שליחת קישור התחברות
           </Button>
-          <p className="text-center text-xs text-muted">נשלח אליכם קוד חד-פעמי. אין צורך בסיסמה.</p>
+          <p className="text-center text-xs text-muted">נשלח אליכם קישור התחברות למייל. אין צורך בסיסמה.</p>
         </form>
       )}
 
       {mode === "code" && step === "verify" && (
         <form onSubmit={verifyCode} className="space-y-4">
           <p className="text-sm text-muted">
-            הזינו את הקוד שנשלח אל <span className="num font-medium text-foreground">{email}</span>
+            שלחנו קישור התחברות אל <span className="num font-medium text-foreground">{email}</span>. פתחו אותו באותו דפדפן. אם קיבלתם קוד מספרי — הזינו אותו כאן:
           </p>
           <Input
             aria-label="קוד אימות"
