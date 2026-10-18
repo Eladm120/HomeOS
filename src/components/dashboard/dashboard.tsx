@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Boxes, CalendarClock, Check, ChevronLeft, Plus, UserPlus, X } from "lucide-react";
+import { Bell, Boxes, CalendarClock, Check, ChevronLeft, Plus, Sparkles, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { addInventoryItemToList } from "@/server/actions/grocery";
 import type { ActivityEvent, InventoryItem, ProductCategory, ShoppingListItem } from "@/lib/types";
@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/card";
 import { SignedImage } from "@/components/media/signed-image";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { SuggestionCard, type SuggestionView } from "@/components/intelligence/suggestions-view";
+import { getWrittenBrief } from "@/server/actions/intelligence";
 
 export interface DashboardModuleCard {
   key: string;
@@ -59,6 +61,9 @@ export interface DashboardProps {
   /** Cards contributed by other modules (tasks, repairs, bills, events…). Empty cards are hidden. */
   modules?: DashboardModuleCard[];
   quickActions?: QuickActionDef[];
+  suggestions?: SuggestionView[];
+  unreadNotifications?: number;
+  aiEnabled?: boolean;
   /** Design preview renders without a live connection. */
   preview?: boolean;
 }
@@ -73,6 +78,16 @@ export function Dashboard(p: DashboardProps) {
   useMemo(() => primeSignedUrls(p.signedUrls), [p.signedUrls]);
   const router = useRouter();
   const [added, setAdded] = useState<Set<string>>(new Set());
+
+  const [written, setWritten] = useState<string | null>(null);
+  useEffect(() => {
+    if (!p.aiEnabled || p.preview || !p.brief.length) return;
+    let alive = true;
+    void getWrittenBrief(p.brief).then((r) => alive && r.ok && setWritten(r.data.text));
+    return () => {
+      alive = false;
+    };
+  }, [p.aiEnabled, p.preview, p.brief]);
 
   const briefKey = `homeos:brief-dismissed:${p.householdId}`;
   const [briefHidden, setBriefHidden] = useState(false);
@@ -143,6 +158,12 @@ export function Dashboard(p: DashboardProps) {
                 </span>
               ))}
             </div>
+            <Link href="/notifications" className="glass pressable relative grid size-10 place-items-center rounded-full text-foreground/80" aria-label={p.unreadNotifications ? `התראות, ${p.unreadNotifications} חדשות` : "התראות"}>
+              <Bell className="size-5" />
+              {!!p.unreadNotifications && (
+                <span className="num absolute -top-0.5 -end-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">{p.unreadNotifications > 9 ? "9+" : p.unreadNotifications}</span>
+              )}
+            </Link>
             <div className="lg:hidden">
               <ThemeToggle />
             </div>
@@ -158,7 +179,14 @@ export function Dashboard(p: DashboardProps) {
               <X className="size-4" strokeWidth={2.5} />
             </button>
             <h2 className="mb-2 text-[13px] font-semibold text-primary">היום בבית</h2>
-            {p.brief.length ? (
+            {written ? (
+              <div className="pe-8">
+                <p className="text-[17px] leading-relaxed">{written}</p>
+                <p className="caption mt-2 flex items-center gap-1 text-muted">
+                  <Sparkles className="size-3" /> נוסח בעזרת AI מהנתונים שלכם
+                </p>
+              </div>
+            ) : p.brief.length ? (
               <ul className="space-y-1.5 pe-8 text-[17px] leading-snug">
                 {p.brief.map((l, i) => (
                   <li key={i}>
@@ -201,6 +229,22 @@ export function Dashboard(p: DashboardProps) {
               </Link>
             )}
           </div>
+        )}
+
+        {p.suggestions && p.suggestions.length > 0 && (
+          <section>
+            <div className="mb-2 flex items-center justify-between px-1">
+              <h2 className="headline">שווה לשים לב</h2>
+              <Link href="/suggestions" className="footnote flex items-center text-primary">
+                הכל <ChevronLeft className="size-4" />
+              </Link>
+            </div>
+            <div className="overflow-hidden rounded-[var(--radius)] border border-border bg-surface [&>*+*]:border-t [&>*+*]:border-border">
+              {p.suggestions.slice(0, 3).map((s) => (
+                <SuggestionCard key={s.id} s={s} compact />
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Shopping list summary */}

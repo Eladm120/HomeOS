@@ -3,6 +3,7 @@ import { RecipeEditor } from "@/components/recipes/recipe-editor";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { Recipe, RecipeIngredient, RecipeStep } from "@/lib/types";
 import { requireHousehold } from "@/server/context";
+import { aiConfigured } from "@/server/ai/client";
 
 export const metadata = { title: "עריכת מתכון" };
 
@@ -20,6 +21,7 @@ export default async function EditRecipePage({ params }: { params: Promise<{ id:
   ]);
   return (
     <RecipeEditor
+      aiEnabled={aiConfigured()}
       householdId={hid}
       recipe={recipe as Recipe}
       ingredients={(ingredients ?? []) as RecipeIngredient[]}

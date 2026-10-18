@@ -1,4 +1,4 @@
-import { ClipboardList, Plus, ScanBarcode, Sparkles } from "lucide-react";
+import { ChefHat, ListChecks, Plus, ReceiptText, ScanBarcode, Sofa, Sparkles, Wrench } from "lucide-react";
 import { Dashboard } from "@/components/dashboard/dashboard";
 import { requireHousehold } from "@/server/context";
 import { loadDashboardData } from "@/server/dashboard-data";
@@ -13,8 +13,12 @@ export default async function HomePage() {
       {...data}
       quickActions={[
         { href: "/shopping?new=1", label: "לקניות", icon: <Plus /> },
-        { href: "/inventory?new=1", label: "למלאי", icon: <ScanBarcode /> },
-        { href: "/inventory/setup", label: "הזנת מלאי", icon: <ClipboardList /> },
+        { href: "/scan", label: "סריקת מוצר", icon: <ScanBarcode /> },
+        { href: "/receipts", label: "צילום קבלה", icon: <ReceiptText /> },
+        { href: "/chores?new=1", label: "משימה", icon: <ListChecks /> },
+        { href: "/recipes/new", label: "מתכון", icon: <ChefHat /> },
+        { href: "/projects?new=1&kind=repair", label: "דיווח תקלה", icon: <Wrench /> },
+        { href: "/planner?new=1", label: "לתכנון רכישות", icon: <Sofa /> },
         { href: "/assistant", label: "לשאול את HomeOS", icon: <Sparkles /> },
       ]}
     />

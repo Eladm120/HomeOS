@@ -9,6 +9,8 @@ import type { ActivityEvent, InventoryItem, ProductCategory, ShoppingListItem } 
 import type { DashboardModuleCard, DashboardProps } from "@/components/dashboard/dashboard";
 import type { HouseholdContext } from "@/server/context";
 import { signPaths } from "@/server/media";
+import { aiConfigured } from "@/server/ai/client";
+import type { SuggestionView } from "@/components/intelligence/suggestions-view";
 
 /** Everything the home screen shows, read as the signed-in member (RLS applies). */
 export async function loadDashboardData(ctx: HouseholdContext): Promise<Omit<DashboardProps, "quickActions">> {
@@ -53,7 +55,22 @@ export async function loadDashboardData(ctx: HouseholdContext): Promise<Omit<Das
     expiringSoon: expiring.filter((x) => x.exp.state === "soon").map((x) => ({ name: x.item.name, days: x.exp.days })),
   });
 
-  const modules = await loadModuleCards(supabase, ctx, now);
+  // Refresh proactive suggestions (cheap, deduplicated SQL) before reading them.
+  await supabase.rpc("generate_suggestions", { p_household: hid });
+  await supabase.rpc("notify_from_suggestions", { p_household: hid });
+  const [modules, { data: suggestions }, { count: unread }] = await Promise.all([
+    loadModuleCards(supabase, ctx, now),
+    supabase
+      .from("ai_suggestions")
+      .select("id, kind, title, body, priority, href, action, confidence, created_at")
+      .eq("household_id", hid)
+      .eq("status", "active")
+      .not("kind", "in", "(low_stock,expiring)")
+      .order("priority")
+      .order("created_at", { ascending: false })
+      .limit(3),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", ctx.user.id).is("read_at", null),
+  ]);
   const shownNeeds = needs.slice(0, 8);
   const signedUrls = await signPaths(supabase, shownNeeds.map((i) => i.image_path));
   const names = ctx.members.map((m) => m.profile?.display_name ?? "").filter(Boolean);
@@ -80,6 +97,9 @@ export async function loadDashboardData(ctx: HouseholdContext): Promise<Omit<Das
     signedUrls,
     householdId: hid,
     modules,
+    suggestions: (suggestions ?? []) as SuggestionView[],
+    unreadNotifications: unread ?? 0,
+    aiEnabled: aiConfigured(),
   };
 }
 

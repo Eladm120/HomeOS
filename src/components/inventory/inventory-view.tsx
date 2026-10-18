@@ -110,6 +110,15 @@ export function InventoryView({
         }
       />
 
+      <div className="scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4">
+        <Link href="/scan" className="pressable flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3.5 text-[15px] font-medium">
+          📷 סריקת מוצר
+        </Link>
+        <Link href="/receipts" className="pressable flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3.5 text-[15px] font-medium">
+          🧾 קבלה מהסופר
+        </Link>
+      </div>
+
       {items.length === 0 ? (
         <Card>
           <EmptyState

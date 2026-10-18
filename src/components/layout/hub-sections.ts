@@ -27,7 +27,19 @@ export const HUB_SECTIONS: { title: string; items: HubItem[] }[] = [
     ],
   },
   {
+    title: "עוזר חכם",
+    items: [
+      { href: "/suggestions", label: "הצעות", description: "מה שווה לשים לב אליו עכשיו", emoji: "💡", hue: 75 },
+      { href: "/notifications", label: "התראות", description: "מה חדש בשבילך", emoji: "🔔", hue: 260 },
+      { href: "/receipts", label: "קבלות", description: "צילום קבלה מעדכן את המלאי", emoji: "🧾", hue: 55 },
+      { href: "/scan", label: "סריקת מוצר", description: "ברקוד או צילום", emoji: "📷", hue: 215 },
+    ],
+  },
+  {
     title: "הגדרות",
-    items: [{ href: "/household/settings", label: "הגדרות הבית", description: "חברי הבית, הזמנות, חדרים וקטגוריות", emoji: "⚙️", hue: 260 }],
+    items: [
+      { href: "/household/settings", label: "הגדרות הבית", description: "חברי הבית, הזמנות, חדרים וקטגוריות", emoji: "⚙️", hue: 260 },
+      { href: "/settings/notifications", label: "הגדרות התראות", description: "על מה ומתי להתריע", emoji: "🔕", hue: 260 },
+    ],
   },
 ];

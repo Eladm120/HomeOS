@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardPaste, Link2, Plus, X } from "lucide-react";
+import { Camera, ClipboardPaste, Link2, Loader2, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { draftFromText, importRecipeFromUrl, saveRecipe } from "@/server/actions/recipes";
+import { extractRecipeWithAi } from "@/server/actions/ai-extract";
+import { uploadHouseholdImage, validateImageFile } from "@/lib/media";
 import type { Recipe, RecipeIngredient, RecipeSource, RecipeStep } from "@/lib/types";
 import type { RecipeDraft } from "@/lib/recipe-parse";
 import { parseIngredientLine } from "@/lib/ingredients";
@@ -33,7 +35,9 @@ export function RecipeEditor({
   ingredients = [],
   steps = [],
   categories,
+  aiEnabled = false,
 }: {
+  aiEnabled?: boolean;
   householdId: string;
   recipe: Recipe | null;
   ingredients?: RecipeIngredient[];
@@ -66,6 +70,35 @@ export function RecipeEditor({
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [aiBusy, setAiBusy] = useState(false);
+  const photoRef = useRef<HTMLInputElement>(null);
+
+  async function runAi(input: { text: string | null; image_path: string | null }) {
+    setAiBusy(true);
+    const res = await extractRecipeWithAi({ ...input, source_url: sourceUrl || null });
+    setAiBusy(false);
+    if (!res.ok) return void toast.error(res.error);
+    applyDraft({ ...res.data, title: res.data.title || title });
+    if (input.image_path && !imagePath) setImagePath(input.image_path);
+    setShowPaste(false);
+    toast.success("זוהה. בדקו לפני השמירה.");
+  }
+
+  async function aiPhoto(file: File | undefined) {
+    if (!file) return;
+    const problem = validateImageFile(file);
+    if (problem) return void toast.error(problem);
+    setAiBusy(true);
+    try {
+      const path = await uploadHouseholdImage(householdId, "recipes", file);
+      await runAi({ text: null, image_path: path });
+    } catch (e) {
+      setAiBusy(false);
+      toast.error((e as Error).message);
+    } finally {
+      if (photoRef.current) photoRef.current.value = "";
+    }
+  }
 
   function applyDraft(d: RecipeDraft) {
     if (d.title && (!title || title === "מתכון")) setTitle(d.title);
@@ -166,10 +199,25 @@ export function RecipeEditor({
             {showPaste && (
               <div className="space-y-2">
                 <Textarea value={pasted} onChange={(e) => setPasted(e.target.value)} placeholder={"• 2 כוסות קמח\n• 3 ביצים\n…"} aria-label="טקסט המתכון" />
-                <Button size="sm" variant="soft" onClick={runPaste}>
-                  זיהוי מצרכים
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="soft" onClick={runPaste}>
+                    זיהוי מצרכים
+                  </Button>
+                  {aiEnabled && (
+                    <Button size="sm" onClick={() => runAi({ text: pasted, image_path: null })} disabled={!pasted.trim() || aiBusy}>
+                      {aiBusy ? <Loader2 className="animate-spin" /> : <Sparkles />} זיהוי חכם (AI)
+                    </Button>
+                  )}
+                </div>
               </div>
+            )}
+            {aiEnabled && (
+              <>
+                <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={(e) => aiPhoto(e.target.files?.[0])} />
+                <button type="button" disabled={aiBusy} onClick={() => photoRef.current?.click()} className="flex items-center gap-1.5 text-[15px] font-medium text-primary disabled:opacity-50">
+                  {aiBusy ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />} צילום מתכון או צילום מסך (AI)
+                </button>
+              </>
             )}
             {notice && <p className="rounded-xl bg-amber-soft px-3 py-2 text-[14px] text-amber">{notice}</p>}
           </section>

@@ -15,7 +15,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/household",
     label: "משק הבית",
     icon: LayoutGrid,
-    match: ["/inventory", "/household", "/chores", "/projects", "/planner", "/appliances", "/documents", "/plants", "/bills", "/expenses", "/calendar", "/smart-home", "/settings", "/notifications", "/suggestions", "/search"],
+    match: ["/inventory", "/household", "/chores", "/projects", "/planner", "/appliances", "/documents", "/plants", "/bills", "/expenses", "/calendar", "/smart-home", "/settings", "/notifications", "/suggestions", "/search", "/receipts", "/scan"],
   },
   { href: "/recipes", label: "מתכונים", icon: ChefHat, match: ["/meals"] },
 ];
