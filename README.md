@@ -26,7 +26,7 @@ An AI-assisted household operating system for couples and families. It is Hebrew
 | Global search, data export, household deletion | ✅ |
 | Browser push notifications | ⏳ not built (see limitations) |
 
-**Not yet run against the live database.** Everything above is implemented and tested locally (type-check, lint, 100+ unit/component tests, and every migration plus every SQL security test executed in an in-process Postgres). The four new migrations still need to be applied to the Supabase project before the new code is deployed — see *Deploying this version*.
+Everything above is tested locally (type-check, lint, 100+ unit/component tests, and every migration plus every SQL security test executed in an in-process Postgres). All migrations are applied to the live Supabase project, the SQL security tests pass there, and the daily `pg_cron` job is scheduled.
 
 ---
 
