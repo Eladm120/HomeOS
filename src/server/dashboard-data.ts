@@ -97,6 +97,7 @@ export async function loadDashboardData(ctx: HouseholdContext): Promise<Omit<Das
     signedUrls,
     householdId: hid,
     modules,
+    setup: await loadSetupSteps(supabase, ctx, inventory.length),
     suggestions: (suggestions ?? []) as SuggestionView[],
     unreadNotifications: unread ?? 0,
     aiEnabled: aiConfigured(),
@@ -218,4 +219,24 @@ async function loadModuleCards(supabase: Supabase, ctx: HouseholdContext, now: D
     });
   }
   return cards;
+}
+
+/** Onboarding steps after household creation (spec: rooms, inventory, appliances, preferences, integrations). */
+async function loadSetupSteps(supabase: Supabase, ctx: HouseholdContext, inventoryCount: number) {
+  const hid = ctx.household.id;
+  const head = { count: "exact" as const, head: true };
+  const [appliances, prefs, conns, recipes] = await Promise.all([
+    supabase.from("appliances").select("id", head).eq("household_id", hid),
+    supabase.from("household_preferences").select("id", head).eq("household_id", hid).eq("user_id", ctx.user.id),
+    supabase.from("integration_connections").select("id", head).eq("household_id", hid),
+    supabase.from("recipes").select("id", head).eq("household_id", hid),
+  ]);
+  return [
+    { key: "partner", label: "להזמין את בן/בת הזוג", href: "/household/settings", done: ctx.members.length > 1 },
+    { key: "inventory", label: "להזין את המלאי בבית", href: "/inventory/setup", done: inventoryCount > 0 },
+    { key: "appliances", label: "לרשום מכשירי חשמל ואחריות (לא חובה)", href: "/appliances?new=1", done: (appliances.count ?? 0) > 0 },
+    { key: "recipes", label: "לשמור מתכון ראשון", href: "/recipes/new", done: (recipes.count ?? 0) > 0 },
+    { key: "prefs", label: "לבחור על מה לקבל התראות", href: "/settings/notifications", done: (prefs.count ?? 0) > 0 },
+    { key: "integrations", label: "לחבר שירותים (לא חובה)", href: "/settings/integrations", done: (conns.count ?? 0) > 0 },
+  ];
 }

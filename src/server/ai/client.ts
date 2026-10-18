@@ -60,7 +60,7 @@ export async function recordUsage(
 
 /** Hebrew message for SDK errors; details go to the log only. */
 export function aiErrorMessage(e: unknown): string {
-  if (e instanceof AiNotConfiguredError || e instanceof AiRefusalError) return e.message;
+  if (e instanceof AiNotConfiguredError || e instanceof AiRefusalError || e instanceof AiRateLimitError) return e.message;
   if (e instanceof Anthropic.RateLimitError) return "יותר מדי בקשות כרגע. נסו שוב בעוד דקה.";
   if (e instanceof Anthropic.AuthenticationError) return "מפתח ה-API של ה-AI לא תקין. בדקו את ההגדרות.";
   if (e instanceof Anthropic.BadRequestError) {
@@ -93,4 +93,22 @@ export function contentForFile(file: Awaited<ReturnType<typeof fileForModel>>): 
   return file.type === "pdf"
     ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: file.data } }
     : { type: "image", source: { type: "base64", media_type: file.media_type, data: file.data } };
+}
+
+/** Per-household guardrail against runaway usage (loops, bugs, abuse). */
+export const AI_LIMITS = { perHour: 120, perDay: 800 };
+
+export class AiRateLimitError extends Error {
+  constructor() {
+    super("הגעתם למכסת השימוש ב-AI לשעה הקרובה. נסו שוב מאוחר יותר.");
+  }
+}
+
+export async function assertWithinAiLimits(supabase: SupabaseClient, householdId: string): Promise<void> {
+  const since = (ms: number) => new Date(Date.now() - ms).toISOString();
+  const [hour, day] = await Promise.all([
+    supabase.from("ai_usage_events").select("id", { count: "exact", head: true }).eq("household_id", householdId).gte("created_at", since(3600_000)),
+    supabase.from("ai_usage_events").select("id", { count: "exact", head: true }).eq("household_id", householdId).gte("created_at", since(86_400_000)),
+  ]);
+  if ((hour.count ?? 0) >= AI_LIMITS.perHour || (day.count ?? 0) >= AI_LIMITS.perDay) throw new AiRateLimitError();
 }

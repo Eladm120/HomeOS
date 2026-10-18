@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { Panel, PanelHeading, PanelRow } from "@/components/ui/panel";
 import { requireHousehold } from "@/server/context";
@@ -33,7 +34,15 @@ export default async function HouseholdHubPage() {
 
   return (
     <>
-      <PageHeader title="משק הבית" subtitle={ctx.household.name} />
+      <PageHeader
+        title="משק הבית"
+        subtitle={ctx.household.name}
+        actions={
+          <Link href="/search" className="pressable flex h-9 items-center rounded-full bg-fill px-3.5 text-[15px] font-medium">
+            חיפוש
+          </Link>
+        }
+      />
       <div className="space-y-6">
         {HUB_SECTIONS.map((section) => (
           <section key={section.title}>

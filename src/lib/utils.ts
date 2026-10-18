@@ -15,3 +15,8 @@ export function safeNextPath(next: string | null | undefined, fallback = "/"): s
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return fallback;
   return next;
 }
+
+/** Safe term for PostgREST .or() filters: escapes LIKE wildcards and drops filter-syntax characters. */
+export function orFilterTerm(q: string): string {
+  return escapeLike(q.replace(/[,()\*:"]/g, " ").trim());
+}

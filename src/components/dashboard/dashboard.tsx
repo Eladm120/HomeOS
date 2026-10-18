@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Boxes, CalendarClock, Check, ChevronLeft, Plus, Sparkles, UserPlus, X } from "lucide-react";
+import { Bell, Boxes, Search, CalendarClock, Check, ChevronLeft, Plus, Sparkles, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { addInventoryItemToList } from "@/server/actions/grocery";
 import type { ActivityEvent, InventoryItem, ProductCategory, ShoppingListItem } from "@/lib/types";
@@ -62,6 +62,8 @@ export interface DashboardProps {
   modules?: DashboardModuleCard[];
   quickActions?: QuickActionDef[];
   suggestions?: SuggestionView[];
+  /** First-week setup steps; the card hides itself when all are done or dismissed. */
+  setup?: { key: string; label: string; href: string; done: boolean }[];
   unreadNotifications?: number;
   aiEnabled?: boolean;
   /** Design preview renders without a live connection. */
@@ -129,6 +131,17 @@ export function Dashboard(p: DashboardProps) {
       .sort((a, b) => (a.cat?.sort_order ?? 999) - (b.cat?.sort_order ?? 999));
   }, [p.pendingGrocery, catById]);
 
+  const setupKey = `homeos:setup-hidden:${p.householdId}`;
+  const [setupHidden, setSetupHidden] = useState(true);
+  useEffect(() => {
+    try {
+      setSetupHidden(localStorage.getItem(setupKey) === "1");
+    } catch {
+      setSetupHidden(false);
+    }
+  }, [setupKey]);
+  const setupLeft = (p.setup ?? []).filter((x) => !x.done);
+
   const nameOf = (id: string | null) => (!id ? "" : p.memberNames[id] || "מישהו");
   const lowCount = p.needs.filter((n) => !n.onList && !added.has(n.id)).length;
   const modules = (p.modules ?? []).filter((m) => m.rows.length > 0);
@@ -158,6 +171,9 @@ export function Dashboard(p: DashboardProps) {
                 </span>
               ))}
             </div>
+            <Link href="/search" className="glass pressable grid size-10 place-items-center rounded-full text-foreground/80" aria-label="חיפוש">
+              <Search className="size-5" />
+            </Link>
             <Link href="/notifications" className="glass pressable relative grid size-10 place-items-center rounded-full text-foreground/80" aria-label={p.unreadNotifications ? `התראות, ${p.unreadNotifications} חדשות` : "התראות"}>
               <Bell className="size-5" />
               {!!p.unreadNotifications && (
@@ -207,6 +223,42 @@ export function Dashboard(p: DashboardProps) {
               <Stat href="/shopping" value={p.urgentCount} label="דחופים" tone={p.urgentCount ? "text-danger" : undefined} />
               <Stat href="#needs" value={lowCount} label="עומדים להיגמר" tone={lowCount ? "text-amber" : undefined} />
             </div>
+          </section>
+        )}
+
+        {!setupHidden && setupLeft.length > 0 && (
+          <section className="rounded-[var(--radius)] border border-border bg-surface p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="headline">בואו נסדר את הבית</h2>
+              <button
+                type="button"
+                className="footnote text-muted"
+                onClick={() => {
+                  setSetupHidden(true);
+                  try {
+                    localStorage.setItem(setupKey, "1");
+                  } catch {
+                    /* ignore */
+                  }
+                }}
+              >
+                הסתרה
+              </button>
+            </div>
+            <p className="footnote mb-3 text-muted">
+              {(p.setup ?? []).length - setupLeft.length} מתוך {(p.setup ?? []).length} · אפשר בכל קצב, הכל נשמר
+            </p>
+            <ul className="space-y-1">
+              {(p.setup ?? []).map((x) => (
+                <li key={x.key}>
+                  <Link href={x.href} className={cn("flex items-center gap-3 rounded-xl px-2 py-2 active:bg-fill", x.done && "text-muted")}>
+                    <span className={cn("grid size-6 shrink-0 place-items-center rounded-full", x.done ? "bg-primary text-primary-foreground" : "shadow-[inset_0_0_0_2px_var(--muted-2)]")}>{x.done && <Check className="size-3.5" strokeWidth={3} />}</span>
+                    <span className={cn("flex-1 text-[15px]", x.done && "line-through")}>{x.label}</span>
+                    {!x.done && <ChevronLeft className="size-4 text-muted-2" />}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 

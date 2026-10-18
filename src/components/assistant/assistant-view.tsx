@@ -80,7 +80,9 @@ export function AssistantView({
     setMessages(initialMessages);
     setConversationId(initialConversation);
   }, [initialMessages, initialConversation]);
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), [messages.length, sending]);
+  useEffect(() => {
+    void endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length, sending]);
 
   async function send(text: string) {
     const body = text.trim();

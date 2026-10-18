@@ -123,7 +123,7 @@ export function AppGlyph({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "relative grid shrink-0 place-items-center overflow-hidden rounded-[28%] bg-[linear-gradient(145deg,#ffb340_0%,#ff6b35_45%,#ff2d55_100%)] shadow-[0_8px_24px_rgba(255,107,53,0.35),inset_0_1px_0_rgba(255,255,255,0.45)]",
+        "relative grid shrink-0 place-items-center overflow-hidden rounded-[28%] bg-[linear-gradient(145deg,#6aa985_0%,#3b7657_55%,#2f6447_100%)] shadow-[0_8px_24px_rgba(59,118,87,0.3),inset_0_1px_0_rgba(255,255,255,0.35)]",
         className,
       )}
     >

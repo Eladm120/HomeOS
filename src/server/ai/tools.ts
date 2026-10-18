@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { addDays, daysUntil, todayInZone } from "@/lib/format";
 import { checkIngredients, nameScore } from "@/lib/ingredients";
-import { escapeLike } from "@/lib/utils";
+import { escapeLike, orFilterTerm } from "@/lib/utils";
 import type { HouseholdContext } from "@/server/context";
 
 /**
@@ -268,7 +268,7 @@ export const TOOLS = [
         .limit(20);
       if (input.kind !== "any") q = q.eq("kind", input.kind);
       if (!input.include_closed) q = q.not("status", "in", "(completed,canceled)");
-      if (input.query) q = q.or(`title.ilike.%${escapeLike(input.query)}%,symptoms.ilike.%${escapeLike(input.query)}%`);
+      if (input.query) q = q.or(`title.ilike.%${orFilterTerm(input.query)}%,symptoms.ilike.%${orFilterTerm(input.query)}%`);
       const { data, error } = await q;
       if (error) throw error;
       const ids = (data ?? []).map((p) => p.id);
@@ -333,7 +333,7 @@ export const TOOLS = [
     z.object({ query: nullableStr }),
     async (input, t) => {
       let q = t.supabase.from("appliances").select("id, name, brand, model, room_id, purchased_on, store, warranty_until, invoice_document_id, manual_document_id, notes").eq("household_id", hid(t)).limit(30);
-      if (input.query) q = q.or(`name.ilike.%${escapeLike(input.query)}%,brand.ilike.%${escapeLike(input.query)}%,model.ilike.%${escapeLike(input.query)}%`);
+      if (input.query) q = q.or(`name.ilike.%${orFilterTerm(input.query)}%,brand.ilike.%${orFilterTerm(input.query)}%,model.ilike.%${orFilterTerm(input.query)}%`);
       const { data, error } = await q;
       if (missingTable(error)) return { not_set_up: true };
       if (error) throw error;

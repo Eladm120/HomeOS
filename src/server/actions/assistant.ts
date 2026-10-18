@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { ActionResult } from "@/lib/types";
 import { formatLongDate, todayInZone } from "@/lib/format";
-import { AI_MODEL, AiNotConfiguredError, FALLBACK_BETA, aiErrorMessage, contentForFile, fileForModel, getAi, recordUsage } from "@/server/ai/client";
+import { AI_MODEL, AiNotConfiguredError, FALLBACK_BETA, aiErrorMessage, assertWithinAiLimits, contentForFile, fileForModel, getAi, recordUsage } from "@/server/ai/client";
 import { TOOL_BY_NAME, TOOL_DEFINITIONS, type AssistantAction, type ToolContext } from "@/server/ai/tools";
 import { assertOwnPath, dbFail, fail, ok, withHousehold } from "@/server/action-utils";
 import { addItemsToDefaultList } from "@/server/grocery-bulk";
@@ -120,6 +120,11 @@ export async function sendAssistantMessage(input: z.input<typeof sendSchema>): P
       { type: "text", text: householdBlock(names, ctx.profile?.display_name ?? "", ctx.household.timezone) },
     ];
 
+    try {
+      await assertWithinAiLimits(supabase, hid);
+    } catch (e) {
+      return fail(aiErrorMessage(e));
+    }
     let answer = "";
     let inputTokens = 0;
     let outputTokens = 0;

@@ -133,6 +133,31 @@ export async function removeMember(userId: string): Promise<ActionResult<null>> 
   });
 }
 
+/**
+ * Owner-only, irreversible: delete the household with all its data (rows cascade)
+ * and its files in storage. The caller must type the household name to confirm.
+ */
+export async function deleteHousehold(confirmName: string): Promise<ActionResult<null>> {
+  return withHousehold(async (ctx, supabase) => {
+    if (ctx.role !== "owner") return fail("רק מנהל/ת הבית יכול/ה למחוק אותו");
+    if (confirmName.trim() !== ctx.household.name.trim()) return fail("השם לא תואם. הקלידו את שם משק הבית בדיוק.");
+    const hid = ctx.household.id;
+    // Remove stored files folder by folder (storage RLS limits this to our household).
+    for (const folder of ["grocery", "inventory", "catalog", "planner", "projects", "recipes", "appliances", "documents", "plants", "receipts", "bills"]) {
+      for (let page = 0; page < 50; page++) {
+        const { data } = await supabase.storage.from("household-media").list(`${hid}/${folder}`, { limit: 100 });
+        if (!data?.length) break;
+        await supabase.storage.from("household-media").remove(data.map((f) => `${hid}/${folder}/${f.name}`));
+      }
+    }
+    const { error } = await supabase.from("households").delete().eq("id", hid);
+    if (error) return dbFail("household.delete", error);
+    (await cookies()).delete(ACTIVE_HOUSEHOLD_COOKIE);
+    revalidatePath("/", "layout");
+    return ok(null);
+  });
+}
+
 // --- Rooms -------------------------------------------------------------------
 
 export async function addRoom(input: { name: string }): Promise<ActionResult<null>> {

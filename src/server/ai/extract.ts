@@ -4,7 +4,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { AI_MODEL, AiNotConfiguredError, AiRefusalError, FALLBACK_BETA, getAi, recordUsage, type AiFeature } from "./client";
+import { AI_MODEL, AiNotConfiguredError, AiRefusalError, FALLBACK_BETA, assertWithinAiLimits, getAi, recordUsage, type AiFeature } from "./client";
 
 /**
  * One structured extraction call (receipts, recipes, bills, plant photos,
@@ -30,6 +30,7 @@ export async function extractStructured<S extends z.ZodType>({
 }): Promise<z.infer<S>> {
   const ai = getAi();
   if (!ai) throw new AiNotConfiguredError();
+  await assertWithinAiLimits(supabase, householdId);
   const response = await ai.beta.messages.parse({
     model: AI_MODEL,
     max_tokens: 16000,

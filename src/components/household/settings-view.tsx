@@ -26,6 +26,7 @@ import { ConfirmSheet, Sheet } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { InvitePanel } from "./invite-panel";
 import { formatShortDate } from "@/lib/format";
+import { PrivacySection } from "./privacy-section";
 
 interface Named {
   id: string;
@@ -154,6 +155,8 @@ export function SettingsView(props: {
         <span className="text-[17px]">מצב כהה / בהיר</span>
         <ThemeToggle />
       </Card>
+
+      <PrivacySection householdName={props.householdName} isOwner={props.isOwner} />
 
       <form
         action={signOut}

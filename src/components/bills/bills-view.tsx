@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileUp, Loader2, Plus, Receipt } from "lucide-react";
 import { toast } from "sonner";
@@ -136,14 +137,16 @@ export function BillsView({
                 <PanelHeading title="מה השתנה" />
                 <Panel>
                   {insights.map((i) => (
-                    <PanelRow
-                      key={i.billId}
-                      href={`/bills/${i.billId}`}
-                      leading={<BillIcon category={i.category} />}
-                      title={BILL_CATEGORY[i.category]?.label ?? i.category}
-                      subtitle={i.text}
-                      trailing={i.verdict !== "similar" ? <Badge tone={i.verdict === "higher" ? "amber" : "sage"}>{i.verdict === "higher" ? "עלייה" : "ירידה"}</Badge> : undefined}
-                    />
+                    <Link key={i.billId} href={`/bills/${i.billId}`} className="flex gap-3 px-4 py-3 active:bg-fill">
+                      <BillIcon category={i.category} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 font-medium">
+                          {BILL_CATEGORY[i.category]?.label ?? i.category}
+                          {i.verdict !== "similar" && <Badge tone={i.verdict === "higher" ? "amber" : "sage"}>{i.verdict === "higher" ? "עלייה" : "ירידה"}</Badge>}
+                        </span>
+                        <span className="footnote mt-0.5 block text-muted">{i.text}</span>
+                      </span>
+                    </Link>
                   ))}
                 </Panel>
               </section>

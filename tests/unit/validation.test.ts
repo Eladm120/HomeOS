@@ -64,3 +64,12 @@ describe("security helpers", () => {
     expect(escapeLike("50%_off\\")).toBe("50\\%\\_off\\\\");
   });
 });
+
+describe("orFilterTerm", () => {
+  it("removes PostgREST filter syntax and escapes wildcards", async () => {
+    const { orFilterTerm } = await import("@/lib/utils");
+    expect(orFilterTerm("חלב,id.eq.1)")).toBe("חלב id.eq.1");
+    expect(orFilterTerm("50%_off")).toBe(escapeLike("50%_off"));
+    expect(orFilterTerm("50%_off")).not.toContain("%_");
+  });
+});

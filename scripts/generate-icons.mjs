@@ -10,7 +10,7 @@ const glyph = (scale) => `
 
 const icon = ({ rounded, scale }) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c8714a"/><stop offset="1" stop-color="#a5532f"/></linearGradient></defs>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a9a76"/><stop offset="1" stop-color="#2f6447"/></linearGradient></defs>
   <rect width="512" height="512" rx="${rounded ? 112 : 0}" fill="url(#g)"/>
   ${glyph(scale)}
 </svg>`;
