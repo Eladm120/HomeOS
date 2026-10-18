@@ -26,6 +26,7 @@ export const HUB_SECTIONS: { title: string; items: HubItem[] }[] = [
       { href: "/planner", label: "תכנון רכישות", description: "רהיטים ומוצרים לפי חדר", emoji: "🛋️", hue: 100, countKey: "planner" },
       { href: "/appliances", label: "מכשירי חשמל", description: "אחריות, חשבוניות ותחזוקה", emoji: "🔌", hue: 235, countKey: "appliances" },
       { href: "/plants", label: "צמחים", description: "השקיה ותזכורות", emoji: "🪴", hue: 140, countKey: "plants" },
+      { href: "/smart-home", label: "בית חכם", description: "מזגן, דוד ותאורה דרך Home Assistant", emoji: "💡", hue: 75 },
     ],
   },
   {
@@ -51,6 +52,7 @@ export const HUB_SECTIONS: { title: string; items: HubItem[] }[] = [
     items: [
       { href: "/household/settings", label: "הגדרות הבית", description: "חברי הבית, הזמנות, חדרים וקטגוריות", emoji: "⚙️", hue: 260 },
       { href: "/settings/notifications", label: "הגדרות התראות", description: "על מה ומתי להתריע", emoji: "🔕", hue: 260 },
+      { href: "/settings/integrations", label: "חיבורים", description: "Home Assistant, Google, AI", emoji: "🔗", hue: 185 },
     ],
   },
 ];

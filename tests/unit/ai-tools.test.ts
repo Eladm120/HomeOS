@@ -71,6 +71,7 @@ const SAMPLE_INPUT: Record<string, unknown> = {
   get_utility_bills: { category: null, months: 6 },
   get_calendar_events: { from: "2026-10-18", to: "2026-10-24" },
   get_smart_home_status: {},
+  propose_smart_home_action: { device_name: "מזגן", action: "turn_off", value: null },
 };
 
 const WRITE_METHODS = ["insert", "update", "upsert", "delete"];

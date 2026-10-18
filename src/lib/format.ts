@@ -98,3 +98,12 @@ export function addDays(isoDate: string, n: number): string {
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
+
+/** ISO instant of a wall-clock time ("YYYY-MM-DDTHH:MM") in a timezone, DST-aware. */
+export function zonedToIso(local: string, timeZone = TIMEZONE): string {
+  const guess = new Date(`${local}:00Z`);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(guess);
+  const g = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  const shown = Date.parse(`${g("year")}-${g("month")}-${g("day")}T${g("hour")}:${g("minute")}:00Z`);
+  return new Date(guess.getTime() - (shown - guess.getTime())).toISOString();
+}

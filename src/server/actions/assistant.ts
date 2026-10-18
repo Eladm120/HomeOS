@@ -10,6 +10,7 @@ import { TOOL_BY_NAME, TOOL_DEFINITIONS, type AssistantAction, type ToolContext 
 import { assertOwnPath, dbFail, fail, ok, withHousehold } from "@/server/action-utils";
 import { addItemsToDefaultList } from "@/server/grocery-bulk";
 import { saveChore } from "@/server/actions/chores";
+import { sendDeviceCommand } from "@/server/actions/integrations";
 import { log } from "@/server/log";
 
 const MAX_TOOL_ROUNDS = 6;
@@ -252,6 +253,12 @@ export async function resolveAssistantAction(messageId: string, actionId: string
         if (!res.ok) return res;
         status = "done";
         summary = "המשימה נוצרה";
+      } else if (action.type === "smart_home") {
+        const p = action.payload as { device_id: string; command: Parameters<typeof sendDeviceCommand>[1] };
+        const res = await sendDeviceCommand(p.device_id, p.command, true, "assistant");
+        if (!res.ok) return res;
+        status = res.data.status === "failed" ? "failed" : "done";
+        summary = res.data.status === "succeeded" ? "בוצע, המכשיר דיווח על השינוי" : res.data.message;
       } else {
         return fail("פעולה לא נתמכת");
       }

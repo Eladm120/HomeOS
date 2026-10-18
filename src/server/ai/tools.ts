@@ -409,6 +409,35 @@ export const TOOLS = [
       return { connected: (data ?? []).length > 0, devices: data ?? [] };
     },
   ),
+
+  tool(
+    "propose_smart_home_action",
+    "Propose a smart-home command (power on/off, AC temperature or mode). It runs only after a household member confirms in the app; the app then reports the device's real state. Use device names from get_smart_home_status.",
+    z.object({
+      device_name: z.string(),
+      action: z.enum(["turn_on", "turn_off", "set_temperature", "set_mode"]),
+      value: z.string().nullable().describe("Temperature number or mode (cool, heat, auto, dry, fan_only) when needed"),
+    }),
+    async (input, t) => {
+      const { data, error } = await t.supabase.from("smart_home_devices").select("id, name, kind, capabilities").eq("household_id", hid(t));
+      if (missingTable(error)) return { not_set_up: true };
+      if (error) throw error;
+      const device = (data ?? []).find((d) => nameScore(d.name, input.device_name) > 0) ?? (data ?? []).find((d) => d.name.includes(input.device_name));
+      if (!device) return { error: "device not found", available: (data ?? []).map((d) => d.name).slice(0, 30) };
+      const command =
+        input.action === "turn_on" ? { type: "power", on: true }
+        : input.action === "turn_off" ? { type: "power", on: false }
+        : input.action === "set_temperature" ? { type: "set_temperature", value: Number(input.value) }
+        : { type: "set_hvac_mode", value: String(input.value ?? "") };
+      if (command.type === "set_temperature" && !Number.isFinite(command.value)) return { error: "temperature value required" };
+      const id = crypto.randomUUID();
+      const verb =
+        input.action === "turn_on" ? "הדלקה" : input.action === "turn_off" ? "כיבוי" : input.action === "set_temperature" ? `כיוון ל-${input.value}°` : `מצב ${input.value}`;
+      t.actions.push({ id, type: "smart_home", title: `${device.name}: ${verb}`.slice(0, 200), payload: { device_id: device.id, command }, status: "proposed" });
+      link(t, "בית חכם", "/smart-home");
+      return { proposal_id: id, status: "waiting_for_user_confirmation" };
+    },
+  ),
 ];
 
 export type AnyTool = (typeof TOOLS)[number];
