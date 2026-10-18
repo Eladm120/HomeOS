@@ -13,6 +13,9 @@
 -- * Plants are watered through water_plant(), which also records history.
 -- =============================================================================
 
+-- Trigram index support for document search.
+create extension if not exists pg_trgm with schema extensions;
+
 -- ---------------------------------------------------------------------------
 -- Document vault
 -- ---------------------------------------------------------------------------

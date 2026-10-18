@@ -27,7 +27,6 @@ $$;
 create function extensions.digest(data text, alg text) returns bytea language sql immutable as $$
   select sha256(convert_to(data, 'utf8'))
 $$;
-create extension if not exists pg_trgm with schema extensions;
 create schema auth;
 create table auth.users (
   id uuid primary key,
