@@ -17,14 +17,19 @@ export default async function HouseholdHubPage() {
   const hid = ctx.household.id;
   const head = { count: "exact" as const, head: true };
 
-  const [inventory, chores, projects, planner, recipes] = await Promise.all([
+  const [inventory, chores, projects, planner, recipes, appliances, plants, bills, documents, events] = await Promise.all([
     count(supabase.from("inventory_items").select("id", head).eq("household_id", hid).is("archived_at", null)),
     count(supabase.from("chores").select("id", head).eq("household_id", hid).eq("status", "active")),
     count(supabase.from("home_projects").select("id", head).eq("household_id", hid).not("status", "in", "(completed,canceled)")),
     count(supabase.from("planned_purchases").select("id", head).eq("household_id", hid).not("status", "in", "(purchased,canceled)")),
     count(supabase.from("recipes").select("id", head).eq("household_id", hid)),
+    count(supabase.from("appliances").select("id", head).eq("household_id", hid)),
+    count(supabase.from("plants").select("id", head).eq("household_id", hid)),
+    count(supabase.from("utility_bills").select("id", head).eq("household_id", hid).eq("payment_status", "unpaid")),
+    count(supabase.from("documents").select("id", head).eq("household_id", hid)),
+    count(supabase.from("household_events").select("id", head).eq("household_id", hid).gte("starts_at", new Date().toISOString())),
   ]);
-  const counts: HubCounts = { inventory, chores, projects, planner, recipes };
+  const counts: HubCounts = { inventory, chores, projects, planner, recipes, appliances, plants, bills, documents, events };
 
   return (
     <>

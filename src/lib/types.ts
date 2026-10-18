@@ -384,3 +384,166 @@ export interface MealPlanEntry {
   sort_order: number;
   created_by: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 4: administration
+// ---------------------------------------------------------------------------
+export type DocumentCategory = "rental" | "insurance" | "warranty" | "invoice" | "utility_bill" | "maintenance" | "contract" | "receipt" | "medical" | "vehicle" | "tax" | "other";
+export type BillCategory = "electricity" | "water" | "arnona" | "gas" | "internet" | "building" | "insurance" | "other";
+export type EventCategory = "technician" | "delivery" | "guests" | "task" | "payment" | "maintenance" | "family" | "other";
+
+export interface HouseholdDocument {
+  id: string;
+  household_id: string;
+  title: string;
+  category: DocumentCategory;
+  tags: string[];
+  file_path: string;
+  file_name: string | null;
+  mime_type: string;
+  size_bytes: number | null;
+  version: number;
+  previous_version_id: string | null;
+  issued_on: string | null;
+  expires_on: string | null;
+  remind_on: string | null;
+  sensitive: boolean;
+  extracted_text: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Appliance {
+  id: string;
+  household_id: string;
+  name: string;
+  kind: string | null;
+  brand: string | null;
+  model: string | null;
+  serial_number: string | null;
+  room_id: string | null;
+  purchased_on: string | null;
+  store: string | null;
+  purchase_price: number | null;
+  currency: string;
+  warranty_until: string | null;
+  warranty_provider: string | null;
+  invoice_document_id: string | null;
+  manual_document_id: string | null;
+  image_path: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ApplianceMaintenance {
+  id: string;
+  household_id: string;
+  appliance_id: string;
+  kind: "maintenance" | "repair" | "inspection" | "cleaning";
+  performed_on: string;
+  description: string;
+  cost: number | null;
+  provider_id: string | null;
+  created_by: string | null;
+}
+
+export interface UtilityBill {
+  id: string;
+  household_id: string;
+  category: BillCategory;
+  provider_name: string | null;
+  account_ref: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  amount: number;
+  currency: string;
+  issue_date: string | null;
+  due_on: string | null;
+  paid_on: string | null;
+  payment_status: "unpaid" | "paid" | "autopay";
+  consumption: number | null;
+  consumption_unit: string | null;
+  fixed_charges: number | null;
+  document_id: string | null;
+  source: "manual" | "upload" | "email" | "api";
+  import_status: "needs_review" | "confirmed";
+  verified: boolean;
+  extraction: Record<string, unknown> | null;
+  last_synced_at: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface RecurringCharge {
+  id: string;
+  household_id: string;
+  title: string;
+  category: string;
+  amount: number;
+  currency: string;
+  frequency: "weekly" | "monthly" | "bimonthly" | "quarterly" | "yearly";
+  next_due_on: string | null;
+  provider: string | null;
+  active: boolean;
+  notes: string | null;
+}
+
+export interface HouseholdExpense {
+  id: string;
+  household_id: string;
+  title: string;
+  category: string;
+  amount: number;
+  currency: string;
+  spent_on: string;
+  recurring_charge_id: string | null;
+  notes: string | null;
+  created_by: string | null;
+}
+
+export interface HouseholdEvent {
+  id: string;
+  household_id: string;
+  title: string;
+  description: string | null;
+  category: EventCategory;
+  starts_at: string;
+  ends_at: string | null;
+  all_day: boolean;
+  location: string | null;
+  assignee_id: string | null;
+  remind_minutes: number | null;
+  linked_entity_type: string | null;
+  linked_entity_id: string | null;
+  external_source: string | null;
+  external_id: string | null;
+  created_by: string | null;
+}
+
+export interface Plant {
+  id: string;
+  household_id: string;
+  name: string;
+  species: string | null;
+  room_id: string | null;
+  location_note: string | null;
+  image_path: string | null;
+  watering_interval_days: number;
+  last_watered_on: string | null;
+  light: "low" | "medium" | "bright" | "direct" | null;
+  notes: string | null;
+  identified_by_ai: boolean;
+  ai_confidence: number | null;
+}
+
+export interface PlantCareEvent {
+  id: string;
+  household_id: string;
+  plant_id: string;
+  kind: "water" | "fertilize" | "repot" | "prune" | "note";
+  performed_on: string;
+  note: string | null;
+  created_by: string | null;
+}

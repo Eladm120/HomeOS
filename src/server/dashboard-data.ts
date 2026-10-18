@@ -4,7 +4,7 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { buildDailyBrief } from "@/lib/daily-brief";
 import { expiryState, stockLevel } from "@/lib/inventory-logic";
 import { addDays, daysUntil, formatHebrewCalendarDate, formatLongDate, greetingFor, joinHebrewNames, relativeDays, todayInZone } from "@/lib/format";
-import { MEAL_SLOT, PROJECT_STATUS } from "@/lib/labels";
+import { BILL_CATEGORY, EVENT_CATEGORY, MEAL_SLOT, PROJECT_STATUS } from "@/lib/labels";
 import type { ActivityEvent, InventoryItem, ProductCategory, ShoppingListItem } from "@/lib/types";
 import type { DashboardModuleCard, DashboardProps } from "@/components/dashboard/dashboard";
 import type { HouseholdContext } from "@/server/context";
@@ -129,7 +129,47 @@ async function loadModuleCards(supabase: Supabase, ctx: HouseholdContext, now: D
     supabase.from("meal_plan_entries").select("id, slot, title, recipe_id, recipes(title)").eq("household_id", hid).eq("plan_date", today).order("slot"),
   ]);
 
+  const [events, bills] = await Promise.all([
+    supabase
+      .from("household_events")
+      .select("id, title, starts_at, all_day, category")
+      .eq("household_id", hid)
+      .gte("starts_at", new Date(now.getTime() - 3600_000).toISOString())
+      .lte("starts_at", `${addDays(today, 3)}T23:59:59Z`)
+      .order("starts_at")
+      .limit(5),
+    supabase.from("utility_bills").select("id, category, provider_name, amount, due_on").eq("household_id", hid).eq("payment_status", "unpaid").lte("due_on", addDays(today, 7)).order("due_on").limit(4),
+  ]);
+
   const cards: DashboardModuleCard[] = [];
+  if (!events.error && events.data?.length) {
+    const fmt = new Intl.DateTimeFormat("he-IL", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: tz });
+    const fmtDay = new Intl.DateTimeFormat("he-IL", { weekday: "short", day: "numeric", month: "numeric", timeZone: tz });
+    cards.push({
+      key: "events",
+      title: "ביומן בימים הקרובים",
+      href: "/calendar",
+      tint: "text-foreground",
+      rows: events.data.map((e) => ({ id: e.id as string, title: `${EVENT_CATEGORY[e.category as string]?.emoji ?? "📌"} ${e.title}`, detail: (e.all_day ? fmtDay : fmt).format(new Date(e.starts_at as string)), href: "/calendar" })),
+    });
+  }
+  if (!bills.error && bills.data?.length) {
+    cards.push({
+      key: "bills",
+      title: "חשבונות לתשלום",
+      href: "/bills",
+      tint: "text-foreground",
+      rows: bills.data.map((b) => {
+        const d = b.due_on ? daysUntil(b.due_on as string, now, tz) : null;
+        return {
+          id: b.id as string,
+          title: `${BILL_CATEGORY[b.category as string]?.emoji ?? "🧾"} ${b.provider_name ?? BILL_CATEGORY[b.category as string]?.label ?? "חשבון"} · ₪${Number(b.amount)}`,
+          href: `/bills/${b.id}`,
+          badge: d == null ? undefined : { text: d < 0 ? "באיחור" : relativeDays(d), tone: d < 0 ? ("danger" as const) : d <= 2 ? ("amber" as const) : ("neutral" as const) },
+        };
+      }),
+    });
+  }
   if (!chores.error) {
     cards.push({
       key: "chores",

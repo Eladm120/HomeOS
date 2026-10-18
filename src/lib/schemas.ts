@@ -180,3 +180,130 @@ export const mealEntrySchema = z
   })
   .refine((m) => !!m.recipe_id || !!m.title, { message: "בחרו מתכון או כתבו מה אוכלים", path: ["title"] });
 export type MealEntryInput = z.input<typeof mealEntrySchema>;
+
+// ---- Phase 4: administration ---------------------------------------------------------
+const date = optionalDate;
+const filePath = z.string().regex(/^[0-9a-f-]{36}\/[a-z-]+\/[0-9A-Za-z_.-]+$/, "נתיב קובץ לא תקין");
+const tagList = z.array(z.string().trim().min(1).max(40)).max(20).default([]);
+
+export const documentSchema = z.object({
+  title: z.string().trim().min(1, "יש להזין שם למסמך").max(200),
+  category: z.enum(["rental", "insurance", "warranty", "invoice", "utility_bill", "maintenance", "contract", "receipt", "medical", "vehicle", "tax", "other"]).default("other"),
+  tags: tagList,
+  file_path: filePath,
+  file_name: optionalText(200),
+  mime_type: z.enum(["application/pdf", "image/jpeg", "image/png", "image/webp"]),
+  size_bytes: optionalInt(0, 26_214_400),
+  issued_on: date,
+  expires_on: date,
+  remind_on: date,
+  sensitive: z.boolean().default(false),
+  notes: optionalText(5000),
+  previous_version_id: optionalId,
+});
+export type DocumentInput = z.input<typeof documentSchema>;
+
+export const documentMetaSchema = documentSchema.omit({ file_path: true, file_name: true, mime_type: true, size_bytes: true, previous_version_id: true });
+export type DocumentMetaInput = z.input<typeof documentMetaSchema>;
+
+export const applianceSchema = z.object({
+  name: z.string().trim().min(1, "יש להזין שם").max(120),
+  kind: optionalText(60),
+  brand: optionalText(80),
+  model: optionalText(120),
+  serial_number: optionalText(120),
+  room_id: optionalId,
+  purchased_on: date,
+  store: optionalText(120),
+  purchase_price: optionalMoney,
+  warranty_until: date,
+  warranty_provider: optionalText(120),
+  invoice_document_id: optionalId,
+  manual_document_id: optionalId,
+  image_path: storagePath,
+  notes: optionalText(5000),
+});
+export type ApplianceInput = z.input<typeof applianceSchema>;
+
+export const maintenanceSchema = z.object({
+  kind: z.enum(["maintenance", "repair", "inspection", "cleaning"]).default("maintenance"),
+  performed_on: date,
+  description: z.string().trim().min(1, "מה נעשה?").max(2000),
+  cost: optionalMoney,
+  provider_id: optionalId,
+});
+
+export const billSchema = z
+  .object({
+    category: z.enum(["electricity", "water", "arnona", "gas", "internet", "building", "insurance", "other"]),
+    provider_name: optionalText(120),
+    account_ref: optionalText(80),
+    period_start: date,
+    period_end: date,
+    amount: z.coerce.number({ error: "סכום לא תקין" }).min(0).max(10_000_000),
+    issue_date: date,
+    due_on: date,
+    paid_on: date,
+    payment_status: z.enum(["unpaid", "paid", "autopay"]).default("unpaid"),
+    consumption: z
+      .union([z.literal(""), z.null(), z.undefined(), z.coerce.number().min(0).max(100_000_000)])
+      .transform((v) => (v === "" || v == null ? null : Number(v))),
+    consumption_unit: optionalText(20),
+    fixed_charges: optionalMoney,
+    document_id: optionalId,
+    notes: optionalText(2000),
+  })
+  .refine((b) => !b.period_start || !b.period_end || b.period_end >= b.period_start, { message: "סוף התקופה לפני תחילתה", path: ["period_end"] });
+export type BillInput = z.input<typeof billSchema>;
+
+export const recurringChargeSchema = z.object({
+  title: z.string().trim().min(1, "יש להזין שם").max(120),
+  category: z.string().trim().min(1).max(40).default("other"),
+  amount: z.coerce.number().min(0).max(10_000_000),
+  frequency: z.enum(["weekly", "monthly", "bimonthly", "quarterly", "yearly"]).default("monthly"),
+  next_due_on: date,
+  provider: optionalText(120),
+  active: z.boolean().default(true),
+  notes: optionalText(2000),
+});
+export type RecurringChargeInput = z.input<typeof recurringChargeSchema>;
+
+export const expenseSchema = z.object({
+  title: z.string().trim().min(1, "על מה?").max(160),
+  category: z.string().trim().min(1).max(40).default("other"),
+  amount: z.coerce.number({ error: "סכום לא תקין" }).positive("סכום חייב להיות חיובי").max(10_000_000),
+  spent_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  notes: optionalText(2000),
+});
+export type ExpenseInput = z.input<typeof expenseSchema>;
+
+export const eventSchema = z
+  .object({
+    title: z.string().trim().min(1, "יש להזין כותרת").max(160),
+    description: optionalText(3000),
+    category: z.enum(["technician", "delivery", "guests", "task", "payment", "maintenance", "family", "other"]).default("other"),
+    starts_at: z.string().min(10),
+    ends_at: z.union([z.literal(""), z.null(), z.undefined(), z.string().min(10)]).transform((v) => (v ? v : null)),
+    all_day: z.boolean().default(false),
+    location: optionalText(200),
+    assignee_id: optionalId,
+    remind_minutes: optionalInt(0, 20160),
+    linked_entity_type: z.enum(["project", "appliance", "chore", "utility_bill", "planned_purchase"]).nullable().default(null),
+    linked_entity_id: optionalId,
+  })
+  .refine((e) => !e.ends_at || Date.parse(e.ends_at) >= Date.parse(e.starts_at), { message: "הסיום לפני ההתחלה", path: ["ends_at"] });
+export type EventInput = z.input<typeof eventSchema>;
+
+export const plantSchema = z.object({
+  name: z.string().trim().min(1, "איך קוראים לצמח?").max(80),
+  species: optionalText(120),
+  room_id: optionalId,
+  location_note: optionalText(120),
+  image_path: storagePath,
+  watering_interval_days: z.coerce.number().int().min(1).max(365).default(7),
+  light: z.enum(["low", "medium", "bright", "direct"]).nullable().default(null),
+  notes: optionalText(3000),
+  identified_by_ai: z.boolean().default(false),
+  ai_confidence: z.union([z.null(), z.undefined(), z.number().min(0).max(1)]).transform((v) => v ?? null),
+});
+export type PlantInput = z.input<typeof plantSchema>;

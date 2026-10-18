@@ -47,7 +47,13 @@ export function ProjectsView({
   const [state, setState] = useState<StateFilter>("open");
   const [query, setQuery] = useState("");
   const [sheet, setSheet] = useState<ProjectKind | null>(null);
-  useOpenFromQuery(() => setSheet(new URLSearchParams(window.location.search).get("kind") === "repair" ? "repair" : "project"));
+  const [defaults, setDefaults] = useState<{ appliance_id?: string }>({});
+  useOpenFromQuery(() => {
+    const params = new URLSearchParams(window.location.search);
+    const appliance = params.get("appliance");
+    setDefaults(appliance && appliances.some((a) => a.id === appliance) ? { appliance_id: appliance } : {});
+    setSheet(params.get("kind") === "repair" ? "repair" : "project");
+  });
 
   const isOpen = (p: HomeProject) => p.status !== "completed" && p.status !== "canceled";
   const filtered = useMemo(() => {
@@ -140,6 +146,7 @@ export function ProjectsView({
         members={members}
         providers={providers}
         appliances={appliances}
+        defaults={defaults}
       />
     </>
   );

@@ -24,6 +24,17 @@ export const HUB_SECTIONS: { title: string; items: HubItem[] }[] = [
     items: [
       { href: "/projects", label: "פרויקטים ותיקונים", description: "תקלות, טכנאים והצעות מחיר", emoji: "🔧", hue: 30, countKey: "projects" },
       { href: "/planner", label: "תכנון רכישות", description: "רהיטים ומוצרים לפי חדר", emoji: "🛋️", hue: 100, countKey: "planner" },
+      { href: "/appliances", label: "מכשירי חשמל", description: "אחריות, חשבוניות ותחזוקה", emoji: "🔌", hue: 235, countKey: "appliances" },
+      { href: "/plants", label: "צמחים", description: "השקיה ותזכורות", emoji: "🪴", hue: 140, countKey: "plants" },
+    ],
+  },
+  {
+    title: "ניהול",
+    items: [
+      { href: "/calendar", label: "יומן הבית", description: "טכנאים, משלוחים ואורחים", emoji: "📅", hue: 30, countKey: "events" },
+      { href: "/bills", label: "חשבונות", description: "חשמל, מים, ארנונה", emoji: "🧾", hue: 300, countKey: "bills" },
+      { href: "/expenses", label: "הוצאות הבית", description: "חיובים קבועים ומגמות", emoji: "📊", hue: 260 },
+      { href: "/documents", label: "מסמכים", description: "ביטוחים, חוזים ואחריות", emoji: "📁", hue: 260, countKey: "documents" },
     ],
   },
   {

@@ -10,6 +10,7 @@ import { extractStructured } from "@/server/ai/extract";
 import { dbFail, fail, ok, withHousehold } from "@/server/action-utils";
 import { addInventoryItemToList } from "@/server/actions/grocery";
 import { completeChore } from "@/server/actions/chores";
+import { waterPlant } from "@/server/actions/admin";
 
 // ---- Daily brief ---------------------------------------------------------------
 
@@ -93,7 +94,7 @@ export async function actOnSuggestion(id: string): Promise<ActionResult<{ messag
   return withHousehold(async (ctx, supabase) => {
     const { data: s } = await supabase.from("ai_suggestions").select("id, action, title").eq("id", id).eq("household_id", ctx.household.id).maybeSingle();
     if (!s?.action) return fail("אין פעולה להצעה הזו");
-    const action = s.action as { type: string; inventory_item_id?: string; chore_id?: string };
+    const action = s.action as { type: string; inventory_item_id?: string; chore_id?: string; plant_id?: string };
     let message = "בוצע";
     if (action.type === "add_inventory_to_list" && action.inventory_item_id) {
       const res = await addInventoryItemToList(action.inventory_item_id);
@@ -103,6 +104,10 @@ export async function actOnSuggestion(id: string): Promise<ActionResult<{ messag
       const res = await completeChore(action.chore_id);
       if (!res.ok) return res;
       message = "סומן כבוצע";
+    } else if (action.type === "water_plant" && action.plant_id) {
+      const res = await waterPlant(action.plant_id);
+      if (!res.ok) return res;
+      message = "נרשמה השקיה";
     } else return fail("פעולה לא נתמכת");
     await supabase.from("ai_suggestions").update({ status: "done", acted_at: new Date().toISOString(), snooze_until: new Date(Date.now() + 86_400_000).toISOString() }).eq("id", id);
     revalidatePath("/suggestions");

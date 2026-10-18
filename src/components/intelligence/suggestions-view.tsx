@@ -41,7 +41,7 @@ export const SUGGESTION_KIND: Record<string, { label: string; emoji: string; hue
   reminder: { label: "תזכורת", emoji: "🔔", hue: 260 },
 };
 
-const ACTION_LABEL: Record<string, string> = { add_inventory_to_list: "לרשימת הקניות", complete_chore: "בוצע ✓" };
+const ACTION_LABEL: Record<string, string> = { add_inventory_to_list: "לרשימת הקניות", complete_chore: "בוצע ✓", water_plant: "השקיתי 💧" };
 
 export function SuggestionCard({ s, compact, onDone }: { s: SuggestionView; compact?: boolean; onDone?: () => void }) {
   const router = useRouter();
