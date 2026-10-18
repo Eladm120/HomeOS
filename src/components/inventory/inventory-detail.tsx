@@ -105,7 +105,7 @@ export function InventoryDetail({
     });
     setSaving(false);
     if (!res.ok) return void toast.error(res.error);
-    toast.success("המלאי עודכן");
+    toast.success(res.data.auto_listed ? `המלאי עודכן · ${item.name} ירד מתחת למינימום ונוסף לרשימת הקניות 🛒` : "המלאי עודכן");
     setMove(null);
     router.refresh();
   }

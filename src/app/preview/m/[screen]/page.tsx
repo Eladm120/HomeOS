@@ -76,7 +76,13 @@ export default async function ModulePreviewPage({ params }: { params: Promise<{ 
       break;
     case "recipes":
       path = "/recipes";
-      content = <RecipesView recipes={f.recipes.map((r) => ({ ...r, readiness: ready(r.id) }))} signedUrls={{}} />;
+      content = (
+        <RecipesView
+          recipes={f.recipes.map((r) => ({ ...r, readiness: ready(r.id) }))}
+          signedUrls={{}}
+          week={Array.from({ length: 7 }, (_, i) => ({ date: addDays(todayInZone(), i), label: ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"][(new Date().getDay() + i) % 7], planned: [1, 1, 0, 1, 0, 0, 0][i], isToday: i === 0 }))}
+        />
+      );
       break;
     case "recipe":
       path = "/recipes";
@@ -121,6 +127,8 @@ export default async function ModulePreviewPage({ params }: { params: Promise<{ 
       content = <SmartHomeView householdId={HID} connected isOwner lastSync={new Date(Date.now() - 120000).toISOString()} lastError={null} devices={[
         { id: "00000000-0000-4000-8000-00000000d001", name: "מזגן סלון", kind: "climate", online: true, state: "cool", attributes: { temperature: 24, current_temperature: 27, fan_mode: "low" }, capabilities: { power: true, target_temperature: { min: 16, max: 30, step: 1 }, hvac_modes: ["off", "cool", "heat", "auto"], fan_modes: ["low", "high"] }, pinned: true, requires_confirmation: false, state_updated_at: new Date(Date.now() - 60000).toISOString(), room: "סלון" },
         { id: "00000000-0000-4000-8000-00000000d002", name: "דוד שמש", kind: "water_heater", online: true, state: "off", attributes: {}, capabilities: { power: true, timer_service: "switcher_kis.turn_on_with_timer" }, pinned: true, requires_confirmation: true, state_updated_at: new Date(Date.now() - 3600000).toISOString(), room: "חדר רחצה" },
+        { id: "00000000-0000-4000-8000-00000000d004", name: "מנורת סלון", kind: "light", online: true, state: "on", attributes: {}, capabilities: { power: true }, pinned: true, requires_confirmation: false, state_updated_at: new Date().toISOString(), room: "סלון" },
+        { id: "00000000-0000-4000-8000-00000000d005", name: "פס לד מטבח", kind: "light", online: true, state: "off", attributes: {}, capabilities: { power: true }, pinned: true, requires_confirmation: false, state_updated_at: new Date().toISOString(), room: "מטבח" },
         { id: "00000000-0000-4000-8000-00000000d003", name: "טמפרטורה חדר שינה", kind: "sensor", online: true, state: "23.5", attributes: { unit_of_measurement: "°C" }, capabilities: {}, pinned: true, requires_confirmation: false, state_updated_at: new Date().toISOString(), room: "חדר שינה" },
       ]} />;
       break;

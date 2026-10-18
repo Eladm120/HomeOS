@@ -3,69 +3,54 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Boxes, Search, CalendarClock, Check, ChevronLeft, Plus, Sparkles, UserPlus, X } from "lucide-react";
+import { Bell, Check, ChevronLeft, Plus, Search, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { addInventoryItemToList } from "@/server/actions/grocery";
-import type { ActivityEvent, InventoryItem, ProductCategory, ShoppingListItem } from "@/lib/types";
-import type { BriefLine } from "@/lib/daily-brief";
-import { formatQuantityWithUnit, relativeDays } from "@/lib/format";
-import { categoryStyle, productEmoji } from "@/lib/category-style";
-import { describeActivity } from "@/lib/activity";
-import { RelativeTime } from "@/components/ui/relative-time";
+import type { AlertItem } from "@/lib/alerts";
+import { completeChore } from "@/server/actions/chores";
+import { relativeDays } from "@/lib/format";
 import { primeSignedUrls } from "@/lib/media";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/card";
-import { SignedImage } from "@/components/media/signed-image";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { SuggestionCard, type SuggestionView } from "@/components/intelligence/suggestions-view";
-import { getWrittenBrief } from "@/server/actions/intelligence";
+import { AlertList } from "@/components/alerts/alert-list";
+import { CheckCircle } from "@/components/grocery/item-row";
+import { RecipeImage } from "@/components/recipes/recipes-view";
 
-export interface DashboardModuleCard {
-  key: string;
+export interface DashboardTask {
+  id: string;
   title: string;
-  href: string;
-  /** Tailwind text colour class for the heading. */
-  tint: string;
-  rows: { id: string; title: string; detail?: string; badge?: { text: string; tone: "neutral" | "primary" | "sage" | "amber" | "danger" | "sky" }; href?: string }[];
-  empty?: string;
+  /** Days from today: negative = late, 0 = today, 1 = tomorrow. */
+  days: number;
+  assigneeId: string | null;
+  assigneeName: string | null;
+  detail: string | null;
 }
 
-export interface QuickActionDef {
+export interface DashboardMeal {
+  id: string;
+  title: string;
+  slot: string;
   href: string;
-  label: string;
-  icon: React.ReactNode;
+  image_path: string | null;
+  image_url: string | null;
 }
 
 export interface DashboardProps {
   greeting: string;
   dateLine: string;
-  today: string;
-  brief: BriefLine[];
-  groceryCount: number;
-  urgentCount: number;
-  pendingGrocery: ShoppingListItem[];
-  categories: ProductCategory[];
-  needs: (InventoryItem & { onList: boolean })[];
-  needsTotal: number;
-  expiring: { id: string; name: string; days: number }[];
-  inventoryCount: number;
-  activity: ActivityEvent[];
-  memberNames: Record<string, string>;
+  householdId: string;
   members: { id: string; name: string }[];
   currentUserId: string;
   isAlone: boolean;
   isOwner: boolean;
+  alerts: AlertItem[];
+  tasks: DashboardTask[];
+  grocery: { count: number; urgent: number; inCart: number; items: { id: string; name: string; emoji: string }[] };
+  meals: DashboardMeal[];
   signedUrls: Record<string, string>;
-  householdId: string;
-  /** Cards contributed by other modules (tasks, repairs, bills, events…). Empty cards are hidden. */
-  modules?: DashboardModuleCard[];
-  quickActions?: QuickActionDef[];
-  suggestions?: SuggestionView[];
   /** First-week setup steps; the card hides itself when all are done or dismissed. */
   setup?: { key: string; label: string; href: string; done: boolean }[];
   unreadNotifications?: number;
-  aiEnabled?: boolean;
   /** Design preview renders without a live connection. */
   preview?: boolean;
 }
@@ -73,111 +58,39 @@ export interface DashboardProps {
 function RealtimeSync({ householdId }: { householdId: string }) {
   useRealtimeRefresh("shopping_list_items", householdId);
   useRealtimeRefresh("inventory_items", householdId);
+  useRealtimeRefresh("chores", householdId);
   return null;
 }
 
 export function Dashboard(p: DashboardProps) {
   useMemo(() => primeSignedUrls(p.signedUrls), [p.signedUrls]);
-  const router = useRouter();
-  const [added, setAdded] = useState<Set<string>>(new Set());
 
-  const [written, setWritten] = useState<string | null>(null);
-  useEffect(() => {
-    if (!p.aiEnabled || p.preview || !p.brief.length) return;
-    let alive = true;
-    void getWrittenBrief(p.brief).then((r) => alive && r.ok && setWritten(r.data.text));
-    return () => {
-      alive = false;
-    };
-  }, [p.aiEnabled, p.preview, p.brief]);
-
-  const briefKey = `homeos:brief-dismissed:${p.householdId}`;
-  const [briefHidden, setBriefHidden] = useState(false);
-  useEffect(() => {
-    try {
-      setBriefHidden(localStorage.getItem(briefKey) === p.today);
-    } catch {
-      /* storage unavailable */
-    }
-  }, [briefKey, p.today]);
-
-  function dismissBrief() {
-    setBriefHidden(true);
-    try {
-      localStorage.setItem(briefKey, p.today);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  async function addToList(item: InventoryItem) {
-    if (p.preview) return void setAdded((s) => new Set(s).add(item.id));
-    const res = await addInventoryItemToList(item.id);
-    if (!res.ok) return void toast.error(res.error);
-    setAdded((s) => new Set(s).add(item.id));
-    toast.success(res.data.created ? `${item.name} נוסף לרשימה` : `${item.name} כבר ברשימה`);
-    router.refresh();
-  }
-
-  const catById = useMemo(() => new Map(p.categories.map((c) => [c.id, c])), [p.categories]);
-  const tiles = useMemo(() => {
-    const counts = new Map<string | null, number>();
-    for (const g of p.pendingGrocery) {
-      const key = g.category_id && catById.has(g.category_id) ? g.category_id : null;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    return [...counts.entries()]
-      .map(([id, n]) => ({ id, n, cat: id ? catById.get(id)! : null }))
-      .sort((a, b) => (a.cat?.sort_order ?? 999) - (b.cat?.sort_order ?? 999));
-  }, [p.pendingGrocery, catById]);
-
-  const setupKey = `homeos:setup-hidden:${p.householdId}`;
-  const [setupHidden, setSetupHidden] = useState(true);
-  useEffect(() => {
-    try {
-      setSetupHidden(localStorage.getItem(setupKey) === "1");
-    } catch {
-      setSetupHidden(false);
-    }
-  }, [setupKey]);
-  const setupLeft = (p.setup ?? []).filter((x) => !x.done);
-
-  const nameOf = (id: string | null) => (!id ? "" : p.memberNames[id] || "מישהו");
-  const lowCount = p.needs.filter((n) => !n.onList && !added.has(n.id)).length;
-  const modules = (p.modules ?? []).filter((m) => m.rows.length > 0);
+  const actionable = p.alerts.filter((a) => !a.handled);
+  const todayTasks = p.tasks.filter((t) => t.days <= 0);
+  const topAlerts = [...actionable, ...p.alerts.filter((a) => a.handled)].filter((a) => a.group !== "chore").slice(0, 4);
+  const otherAlertCount = p.alerts.filter((a) => a.group !== "chore").length;
 
   return (
     <div className="relative pb-6">
       {!p.preview && <RealtimeSync householdId={p.householdId} />}
 
-      <header className="relative pt-[calc(env(safe-area-inset-top)+1rem)] pb-5 lg:pt-10">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[14px] text-muted">{p.dateLine}</p>
-            <h1 className="large-title mt-1 animate-fade-up text-balance">{p.greeting}</h1>
-          </div>
+      <header className="pt-[calc(env(safe-area-inset-top)+1rem)] pb-5 lg:pt-10">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[14px] text-muted">{p.dateLine}</p>
           <div className="flex shrink-0 items-center gap-2">
-            <div className="flex -space-x-2.5 space-x-reverse" aria-label="חברי הבית">
-              {p.members.slice(0, 4).map((m, i) => (
-                <span
-                  key={m.id}
-                  title={m.name}
-                  className={cn(
-                    "grid size-9 place-items-center rounded-full text-[15px] font-bold ring-[2.5px] ring-background",
-                    i % 2 === 0 ? "bg-primary text-primary-foreground" : "bg-[color-mix(in_oklab,var(--accent)_55%,var(--foreground))] text-background",
-                  )}
-                >
-                  {m.name.slice(0, 1) || "?"}
-                </span>
-              ))}
-            </div>
-            <Link href="/search" className="glass pressable grid size-10 place-items-center rounded-full text-foreground/80" aria-label="חיפוש">
-              <Search className="size-5" />
+            <Link href="/search" className="pressable grid size-10 place-items-center rounded-full bg-surface text-foreground/75 shadow-[var(--card-shadow)]" aria-label="חיפוש">
+              <Search className="size-[19px]" />
             </Link>
-            <Link href="/notifications" className="glass pressable relative grid size-10 place-items-center rounded-full text-foreground/80" aria-label={p.unreadNotifications ? `התראות, ${p.unreadNotifications} חדשות` : "התראות"}>
-              <Bell className="size-5" />
+            <Link
+              href="/notifications"
+              className="pressable relative grid size-10 place-items-center rounded-full bg-surface text-foreground/75 shadow-[var(--card-shadow)]"
+              aria-label={p.unreadNotifications ? `התראות, ${p.unreadNotifications} חדשות` : "התראות"}
+            >
+              <Bell className="size-[19px]" />
               {!!p.unreadNotifications && (
-                <span className="num absolute -top-0.5 -end-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">{p.unreadNotifications > 9 ? "9+" : p.unreadNotifications}</span>
+                <span className="num absolute -top-1 -end-1 grid h-5 min-w-5 place-items-center rounded-full bg-terracotta px-1 text-[11px] font-bold text-white">
+                  {p.unreadNotifications > 9 ? "9+" : p.unreadNotifications}
+                </span>
               )}
             </Link>
             <div className="lg:hidden">
@@ -185,317 +98,328 @@ export function Dashboard(p: DashboardProps) {
             </div>
           </div>
         </div>
+        <div className="mt-3 flex items-end justify-between gap-3">
+          <h1 className="large-title animate-fade-up text-balance">{p.greeting}</h1>
+          <div className="mb-1 flex shrink-0 -space-x-2 space-x-reverse" aria-label="חברי הבית">
+            {p.members.slice(0, 4).map((m, i) => (
+              <Avatar key={m.id} name={m.name} index={i} className="size-9 text-[15px] ring-[2.5px] ring-background" />
+            ))}
+          </div>
+        </div>
       </header>
 
-      <div className="space-y-6">
-        {/* Today: one summary + three numbers */}
-        {!briefHidden && (
-          <section className="relative animate-fade-up rounded-[var(--radius)] border border-border bg-surface p-[18px] shadow-[var(--glass-shadow)]">
-            <button type="button" onClick={dismissBrief} className="absolute end-3 top-3 grid size-8 place-items-center rounded-full bg-fill text-muted" aria-label="הסתרת הסיכום להיום">
-              <X className="size-4" strokeWidth={2.5} />
-            </button>
-            <h2 className="mb-2 text-[13px] font-semibold text-primary">היום בבית</h2>
-            {written ? (
-              <div className="pe-8">
-                <p className="text-[17px] leading-relaxed">{written}</p>
-                <p className="caption mt-2 flex items-center gap-1 text-muted">
-                  <Sparkles className="size-3" /> נוסח בעזרת AI מהנתונים שלכם
-                </p>
-              </div>
-            ) : p.brief.length ? (
-              <ul className="space-y-1.5 pe-8 text-[17px] leading-snug">
-                {p.brief.map((l, i) => (
-                  <li key={i}>
-                    {l.text}
-                    {l.kind === "estimate" && <Badge className="ms-1.5">הערכה</Badge>}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="pe-8 text-[17px] leading-snug">
-                {p.inventoryCount === 0 && p.groceryCount === 0
-                  ? "ברוכים הבאים הביתה. הוסיפו מוצר לקניות או הזינו את המלאי, ומחר בבוקר יחכה כאן סיכום."
-                  : "הכל מסודר היום. אין חוסרים, תוקף קרוב או משימות דחופות."}
-              </p>
-            )}
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <Stat href="/shopping" value={p.groceryCount} label="לקנות" />
-              <Stat href="/shopping" value={p.urgentCount} label="דחופים" tone={p.urgentCount ? "text-danger" : undefined} />
-              <Stat href="#needs" value={lowCount} label="עומדים להיגמר" tone={lowCount ? "text-amber" : undefined} />
-            </div>
-          </section>
-        )}
+      <div className="space-y-7">
+        {/* At a glance */}
+        <div className="grid grid-cols-3 gap-2.5">
+          <GlanceTile href="/shopping" emoji="🛒" value={p.grocery.count} label="לקנות" tone="honey" />
+          <GlanceTile href="#tasks" emoji="🧺" value={todayTasks.length} label="משימות היום" tone="sage" />
+          <GlanceTile href="/notifications" emoji="🔔" value={actionable.length} label="לטיפול" tone="terracotta" />
+        </div>
 
-        {!setupHidden && setupLeft.length > 0 && (
-          <section className="rounded-[var(--radius)] border border-border bg-surface p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="headline">בואו נסדר את הבית</h2>
-              <button
-                type="button"
-                className="footnote text-muted"
-                onClick={() => {
-                  setSetupHidden(true);
-                  try {
-                    localStorage.setItem(setupKey, "1");
-                  } catch {
-                    /* ignore */
-                  }
-                }}
-              >
-                הסתרה
-              </button>
-            </div>
-            <p className="footnote mb-3 text-muted">
-              {(p.setup ?? []).length - setupLeft.length} מתוך {(p.setup ?? []).length} · אפשר בכל קצב, הכל נשמר
-            </p>
-            <ul className="space-y-1">
-              {(p.setup ?? []).map((x) => (
-                <li key={x.key}>
-                  <Link href={x.href} className={cn("flex items-center gap-3 rounded-xl px-2 py-2 active:bg-fill", x.done && "text-muted")}>
-                    <span className={cn("grid size-6 shrink-0 place-items-center rounded-full", x.done ? "bg-primary text-primary-foreground" : "shadow-[inset_0_0_0_2px_var(--muted-2)]")}>{x.done && <Check className="size-3.5" strokeWidth={3} />}</span>
-                    <span className={cn("flex-1 text-[15px]", x.done && "line-through")}>{x.label}</span>
-                    {!x.done && <ChevronLeft className="size-4 text-muted-2" />}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {/* Quick actions */}
-        {p.quickActions && p.quickActions.length > 0 && (
-          <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4">
-            {p.quickActions.map((a) => (
-              <Link
-                key={a.href}
-                href={a.href}
-                className="pressable flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3.5 text-[15px] font-medium [&_svg]:size-[18px] [&_svg]:text-primary"
-              >
-                {a.icon}
-                {a.label}
-              </Link>
-            ))}
-            {p.isAlone && p.isOwner && (
-              <Link href="/household/settings" className="pressable flex h-10 shrink-0 items-center gap-2 rounded-full bg-primary-soft px-3.5 text-[15px] font-semibold text-primary [&_svg]:size-[18px]">
-                <UserPlus /> הזמנת בן/בת זוג
-              </Link>
-            )}
-          </div>
-        )}
-
-        {p.suggestions && p.suggestions.length > 0 && (
-          <section>
-            <div className="mb-2 flex items-center justify-between px-1">
-              <h2 className="headline">שווה לשים לב</h2>
-              <Link href="/suggestions" className="footnote flex items-center text-primary">
-                הכל <ChevronLeft className="size-4" />
-              </Link>
-            </div>
-            <div className="overflow-hidden rounded-[var(--radius)] border border-border bg-surface [&>*+*]:border-t [&>*+*]:border-border">
-              {p.suggestions.slice(0, 3).map((s) => (
-                <SuggestionCard key={s.id} s={s} compact />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Shopping list summary */}
-        <section className="overflow-hidden rounded-[var(--radius)] border border-border bg-surface p-[18px]">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="headline">רשימת הקניות</h2>
-              <p className="footnote text-muted">
-                {p.groceryCount ? `${p.groceryCount} פריטים${p.urgentCount ? ` · ${p.urgentCount} דחופים` : ""}` : "הרשימה ריקה"}
-              </p>
-            </div>
-            <Link href="/shopping" className="pressable flex h-10 items-center rounded-full bg-primary px-4 text-[15px] font-semibold text-primary-foreground">
-              לרשימה
-            </Link>
-          </div>
-          {tiles.length > 0 && (
-            <div className="scrollbar-none -mx-[18px] mt-4 flex gap-2 overflow-x-auto px-[18px]">
-              {tiles.map((t) => {
-                const s = categoryStyle(t.cat);
-                return (
-                  <Link
-                    key={t.id ?? "none"}
-                    href="/shopping"
-                    className="cat-tint pressable flex w-[78px] shrink-0 flex-col items-center gap-1 rounded-[18px] px-1.5 pt-2.5 pb-2"
-                    style={{ "--h": s.hue } as React.CSSProperties}
-                  >
-                    <span aria-hidden className="text-[30px] leading-none">
-                      {s.emoji}
-                    </span>
-                    <span className="line-clamp-2 text-center text-[12px] leading-tight font-semibold">{t.cat?.name ?? "ללא קטגוריה"}</span>
-                    <span className="num text-[12px] text-muted">{t.n}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Running low */}
-        <section id="needs" className="scroll-mt-6">
-          <div className="mb-2 flex items-center justify-between px-1">
-            <h2 className="headline">עומד להיגמר</h2>
-            <Link href="/inventory" className="footnote flex items-center text-primary">
-              למלאי <ChevronLeft className="size-4" />
-            </Link>
-          </div>
-          {p.needs.length ? (
-            <div className="scrollbar-none -mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1">
-              {p.needs.map((i) => {
-                const listed = i.onList || added.has(i.id);
-                const out = Number(i.quantity) <= 0;
-                const cat = i.category_id ? catById.get(i.category_id) : null;
-                return (
-                  <div key={i.id} className="flex w-[150px] shrink-0 flex-col gap-2 rounded-[var(--radius)] border border-border bg-surface p-3.5">
-                    <Link href={`/inventory/${i.id}`} className="flex flex-col gap-1.5 active:opacity-70">
-                      {i.image_path ? (
-                        <SignedImage path={i.image_path} alt={i.name} className="size-10 rounded-[12px]" />
-                      ) : (
-                        <span aria-hidden className="text-[32px] leading-none">
-                          {productEmoji(i.name, cat)}
-                        </span>
-                      )}
-                      <span className="truncate font-semibold">{i.name}</span>
-                      <span className={cn("footnote", out ? "text-danger" : "text-amber")}>
-                        {out ? "נגמר" : `נשארו ${formatQuantityWithUnit(i.quantity, i.unit)}`}
-                        {i.stock_confidence === "estimated" && " · משוער"}
-                      </span>
-                    </Link>
-                    <button
-                      type="button"
-                      disabled={listed}
-                      onClick={() => addToList(i)}
-                      className="pressable mt-auto flex h-9 items-center justify-center gap-1 rounded-xl bg-primary-soft text-[14px] font-semibold text-primary disabled:bg-transparent disabled:text-muted"
-                    >
-                      {listed ? (
-                        <>
-                          <Check className="size-4" /> ברשימה
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="size-4" /> לרשימה
-                        </>
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : p.inventoryCount === 0 ? (
-            <Link href="/inventory/setup" className="flex items-center justify-between rounded-[var(--radius)] border border-border bg-surface p-4 text-[15px] text-primary">
-              <span className="flex items-center gap-2">
-                <Boxes className="size-5" /> הזינו את המלאי כדי לדעת מה חסר
-              </span>
-              <ChevronLeft className="size-5" />
-            </Link>
-          ) : (
-            <p className="rounded-[var(--radius)] border border-border bg-surface p-4 text-[15px] text-muted">אין מוצרים מתחת למינימום.</p>
-          )}
-        </section>
-
-        {p.expiring.length > 0 && (
-          <ModuleCard
-            card={{
-              key: "expiring",
-              title: "תוקף קרוב",
-              href: "/inventory",
-              tint: "text-danger",
-              rows: p.expiring.map((x) => ({
-                id: x.id,
-                title: x.name,
-                href: `/inventory/${x.id}`,
-                badge: { text: x.days < 0 ? "פג תוקף" : relativeDays(x.days), tone: x.days < 0 ? "danger" : "amber" },
-              })),
-            }}
-            icon={<CalendarClock className="size-4" />}
-          />
-        )}
-
-        {modules.map((m) => (
-          <ModuleCard key={m.key} card={m} />
-        ))}
-
+        {/* Needs attention */}
         <section>
-          <h2 className="headline mb-2 px-1">מה חדש בבית</h2>
-          <div className="rounded-[var(--radius)] border border-border bg-surface px-4 py-1">
-            {p.activity.length ? (
-              <ol className="[&>*+*]:border-t [&>*+*]:border-border">
-                {p.activity
-                  .map((e) => ({ e, text: describeActivity(e) }))
-                  .filter((x) => x.text)
-                  .slice(0, 5)
-                  .map(({ e, text }) => (
-                    <li key={e.id} className="flex items-center gap-3 py-3 text-[15px]">
-                      <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden />
-                      <span className="min-w-0 flex-1">
-                        <span className="font-semibold">{nameOf(e.actor_id) || "המערכת"}</span>
-                        <span className="text-muted"> · </span>
-                        {text}
-                      </span>
-                      <span className="footnote shrink-0 text-muted">
-                        <RelativeTime value={e.created_at} />
-                      </span>
-                    </li>
-                  ))}
-              </ol>
-            ) : (
-              <p className="py-3 text-[15px] text-muted">עדיין שקט כאן.</p>
-            )}
-          </div>
+          <SectionTitle title="דורש תשומת לב" href={otherAlertCount > topAlerts.length ? "/notifications" : undefined} more={otherAlertCount} />
+          {topAlerts.length ? (
+            <AlertList alerts={topAlerts} preview={p.preview} />
+          ) : (
+            <div className="card flex items-center gap-3 p-4">
+              <span className="text-[28px]" aria-hidden>
+                ☕
+              </span>
+              <span>
+                <span className="block font-semibold">הכל רגוע בבית</span>
+                <span className="footnote block text-muted">אין חוסרים, תשלומים או תוקף קרוב.</span>
+              </span>
+            </div>
+          )}
         </section>
+
+        {/* Today's tasks */}
+        <TodayTasks tasks={p.tasks} members={p.members} currentUserId={p.currentUserId} preview={p.preview} />
+
+        {/* Shopping */}
+        <section>
+          <SectionTitle title="רשימת הקניות" href="/shopping" more={p.grocery.count} />
+          <Link href="/shopping" className="card pressable block overflow-hidden">
+            <div className="flex items-center gap-3 bg-honey-soft px-4 py-3.5">
+              <span className="text-[30px] leading-none" aria-hidden>
+                🛒
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="headline block">{p.grocery.count ? `${p.grocery.count} פריטים לקנות` : "הרשימה ריקה"}</span>
+                <span className="footnote block text-muted">
+                  {[p.grocery.urgent ? `${p.grocery.urgent} דחופים` : null, p.grocery.inCart ? `${p.grocery.inCart} כבר בעגלה` : null].filter(Boolean).join(" · ") || "מה שנגמר במלאי נכנס לכאן לבד"}
+                </span>
+              </span>
+              <ChevronLeft className="size-5 text-muted" />
+            </div>
+            {p.grocery.items.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 p-3.5">
+                {p.grocery.items.map((g) => (
+                  <span key={g.id} className="flex h-8 items-center gap-1.5 rounded-full bg-surface-2 px-3 text-[14px] font-medium">
+                    <span aria-hidden>{g.emoji}</span>
+                    {g.name}
+                  </span>
+                ))}
+                {p.grocery.count > p.grocery.items.length && (
+                  <span className="num flex h-8 items-center rounded-full px-2 text-[14px] text-muted">+{p.grocery.count - p.grocery.items.length}</span>
+                )}
+              </div>
+            )}
+          </Link>
+        </section>
+
+        {/* Today's food */}
+        <section>
+          <SectionTitle title="מה אוכלים היום" href="/meals" />
+          {p.meals.length ? (
+            <div className="space-y-2.5">
+              {p.meals.map((m) => (
+                <Link key={m.id} href={m.href} className="card pressable flex items-center gap-3 overflow-hidden p-2.5">
+                  <RecipeImage r={{ title: m.title, image_path: m.image_path, image_url: m.image_url }} className="size-16 shrink-0 rounded-2xl text-[30px]" />
+                  <span className="min-w-0 flex-1">
+                    <span className="footnote block text-muted">{m.slot}</span>
+                    <span className="headline block truncate">{m.title}</span>
+                  </span>
+                  <ChevronLeft className="me-1 size-5 text-muted-2" />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Link href="/meals" className="card pressable flex items-center gap-3 p-4">
+              <span className="text-[28px]" aria-hidden>
+                🍽️
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">עוד לא תכננתם</span>
+                <span className="footnote block text-muted">בחרו מתכון, ומה שחסר לו יעבור לקניות</span>
+              </span>
+              <span className="text-[14px] font-semibold text-primary">לתכנון</span>
+            </Link>
+          )}
+        </section>
+
+        <SetupCard householdId={p.householdId} setup={p.setup} />
+
+        {p.isAlone && p.isOwner && (
+          <Link href="/household/settings" className="card pressable flex items-center gap-3 p-4 text-primary">
+            <UserPlus className="size-5" />
+            <span className="flex-1 font-semibold">להזמין את בן/בת הזוג לבית</span>
+            <ChevronLeft className="size-5" />
+          </Link>
+        )}
       </div>
     </div>
   );
 }
 
-function Stat({ href, value, label, tone }: { href: string; value: number; label: string; tone?: string }) {
+const TONES = {
+  honey: "bg-honey-soft [--tone:var(--honey)]",
+  sage: "bg-sage-soft [--tone:var(--sage)]",
+  terracotta: "bg-terracotta-soft [--tone:var(--terracotta)]",
+} as const;
+
+function GlanceTile({ href, emoji, value, label, tone }: { href: string; emoji: string; value: number; label: string; tone: keyof typeof TONES }) {
   return (
-    <Link href={href} className="pressable flex flex-col gap-0.5 rounded-2xl bg-surface-2 px-3 py-2.5">
-      <span className={cn("num text-[24px] leading-tight font-extrabold", tone)}>{value}</span>
-      <span className="text-[13px] leading-tight text-muted">{label}</span>
+    <Link href={href} className={cn("pressable flex flex-col gap-2 rounded-[1.25rem] p-3.5", TONES[tone])}>
+      <span className="text-[22px] leading-none" aria-hidden>
+        {emoji}
+      </span>
+      <span>
+        <span className="num block text-[28px] leading-none font-bold text-[var(--tone)] [font-family:var(--font-display)]">{value}</span>
+        <span className="mt-1 block text-[13px] leading-tight font-medium text-foreground/70">{label}</span>
+      </span>
     </Link>
   );
 }
 
-function ModuleCard({ card, icon }: { card: DashboardModuleCard; icon?: React.ReactNode }) {
+function SectionTitle({ title, href, more }: { title: string; href?: string; more?: number }) {
   return (
-    <section>
-      <div className="mb-2 flex items-center justify-between px-1">
-        <h2 className={cn("headline flex items-center gap-1.5", card.tint)}>
-          {icon}
-          {card.title}
-        </h2>
-        <Link href={card.href} className="footnote flex items-center text-primary" aria-label={`פתיחת ${card.title}`}>
-          הכל <ChevronLeft className="size-4" />
+    <div className="mb-2.5 flex items-center justify-between px-1">
+      <h2 className="text-[19px] font-semibold [font-family:var(--font-display)]">{title}</h2>
+      {href && (
+        <Link href={href} className="flex items-center text-[14px] font-medium text-primary">
+          {more ? <span className="num">הכל · {more}</span> : "הכל"}
+          <ChevronLeft className="size-4" />
         </Link>
+      )}
+    </div>
+  );
+}
+
+export function Avatar({ name, index, className }: { name: string; index: number; className?: string }) {
+  const palette = ["bg-primary text-primary-foreground", "bg-terracotta text-white", "bg-honey text-white", "bg-sky text-white"];
+  return (
+    <span title={name} className={cn("grid shrink-0 place-items-center rounded-full font-bold", palette[index % palette.length], className)}>
+      {name.slice(0, 1) || "?"}
+    </span>
+  );
+}
+
+/** Today's chores as a real checklist: tick to complete, the next date is scheduled automatically. */
+function TodayTasks({ tasks, members, currentUserId, preview }: { tasks: DashboardTask[]; members: { id: string; name: string }[]; currentUserId: string; preview?: boolean }) {
+  const router = useRouter();
+  const [mine, setMine] = useState(false);
+  const [done, setDone] = useState<Set<string>>(new Set());
+  const [gone, setGone] = useState<Set<string>>(new Set());
+
+  const memberIndex = (id: string | null) => members.findIndex((m) => m.id === id);
+  const visible = tasks.filter((t) => !gone.has(t.id) && (!mine || t.assigneeId === currentUserId || !t.assigneeId));
+  const now = visible.filter((t) => t.days <= 0);
+  const tomorrow = visible.filter((t) => t.days === 1);
+
+  async function complete(t: DashboardTask) {
+    if (done.has(t.id)) return;
+    setDone((s) => new Set(s).add(t.id));
+    if (!preview) {
+      const res = await completeChore(t.id);
+      if (!res.ok) {
+        setDone((s) => {
+          const n = new Set(s);
+          n.delete(t.id);
+          return n;
+        });
+        return void toast.error(res.error);
+      }
+      toast.success(`${t.title} ✓`);
+    }
+    setTimeout(() => {
+      setGone((s) => new Set(s).add(t.id));
+      if (!preview) router.refresh();
+    }, 700);
+  }
+
+  const row = (t: DashboardTask) => {
+    const isDone = done.has(t.id);
+    const idx = memberIndex(t.assigneeId);
+    return (
+      <li key={t.id} className="flex min-h-[60px] items-center gap-3 px-3.5 py-2.5">
+        <CheckCircle checked={isDone} onToggle={() => complete(t)} label={`סימון ${t.title} כבוצע`} />
+        <Link href={`/chores/${t.id}`} className="min-w-0 flex-1 active:opacity-60">
+          <span className={cn("block truncate text-[16px] font-medium transition-colors", isDone && "text-muted line-through")}>{t.title}</span>
+          {t.detail && <span className="footnote block truncate text-muted">{t.detail}</span>}
+        </Link>
+        {t.days < 0 && !isDone && <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-[12px] font-semibold text-danger">{relativeDays(t.days)}</span>}
+        {idx >= 0 ? (
+          <Avatar name={t.assigneeName ?? ""} index={idx} className="size-7 text-[12px]" />
+        ) : (
+          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-fill text-[11px] font-semibold text-muted" title="משותף">
+            👥
+          </span>
+        )}
+      </li>
+    );
+  };
+
+  return (
+    <section id="tasks" className="scroll-mt-6">
+      <div className="mb-2.5 flex items-center justify-between gap-2 px-1">
+        <h2 className="text-[19px] font-semibold [font-family:var(--font-display)]">המשימות של היום</h2>
+        <div className="flex items-center gap-1.5">
+          {members.length > 1 && (
+            <div className="flex rounded-full bg-fill p-0.5 text-[13px] font-semibold" role="group" aria-label="של מי">
+              {[
+                { v: false, l: "כולם" },
+                { v: true, l: "שלי" },
+              ].map((o) => (
+                <button
+                  key={o.l}
+                  type="button"
+                  aria-pressed={mine === o.v}
+                  onClick={() => setMine(o.v)}
+                  className={cn("h-7 rounded-full px-3 transition-colors", mine === o.v ? "bg-surface shadow-sm" : "text-muted")}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+          )}
+          <Link href="/chores?new=1" className="pressable grid size-8 place-items-center rounded-full bg-primary text-primary-foreground" aria-label="משימה חדשה">
+            <Plus className="size-4" strokeWidth={2.75} />
+          </Link>
+        </div>
       </div>
-      <ul className="rounded-[var(--radius)] border border-border bg-surface px-4 [&>*+*]:border-t [&>*+*]:border-border">
-        {card.rows.map((r) => {
-          const inner = (
-            <>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[16px]">{r.title}</span>
-                {r.detail && <span className="footnote block truncate text-muted">{r.detail}</span>}
-              </span>
-              {r.badge && <Badge tone={r.badge.tone}>{r.badge.text}</Badge>}
-            </>
-          );
-          return (
-            <li key={r.id}>
-              {r.href ? (
-                <Link href={r.href} className="flex min-h-12 items-center gap-3 py-2.5 active:opacity-60">
-                  {inner}
-                </Link>
-              ) : (
-                <div className="flex min-h-12 items-center gap-3 py-2.5">{inner}</div>
-              )}
-            </li>
-          );
-        })}
+
+      {now.length ? (
+        <ul className="card overflow-hidden [&>*+*]:border-t [&>*+*]:border-border">{now.map(row)}</ul>
+      ) : (
+        <div className="card flex items-center gap-3 p-4">
+          <span className="grid size-10 place-items-center rounded-full bg-sage-soft text-sage">
+            <Check className="size-5" strokeWidth={3} />
+          </span>
+          <span className="flex-1">
+            <span className="block font-semibold">אין משימות פתוחות להיום</span>
+            <Link href="/chores" className="footnote text-primary">
+              לכל המשימות
+            </Link>
+          </span>
+        </div>
+      )}
+
+      {tomorrow.length > 0 && (
+        <>
+          <p className="footnote mt-3 mb-1.5 px-1 font-semibold text-muted">מחר</p>
+          <ul className="card overflow-hidden opacity-90 [&>*+*]:border-t [&>*+*]:border-border">{tomorrow.map(row)}</ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+function SetupCard({ householdId, setup }: { householdId: string; setup?: DashboardProps["setup"] }) {
+  const key = `homeos:setup-hidden:${householdId}`;
+  const [hidden, setHidden] = useState(true);
+  useEffect(() => {
+    try {
+      setHidden(localStorage.getItem(key) === "1");
+    } catch {
+      setHidden(false);
+    }
+  }, [key]);
+  const left = (setup ?? []).filter((x) => !x.done);
+  if (hidden || !left.length) return null;
+  const total = (setup ?? []).length;
+
+  return (
+    <section className="card p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="headline">בואו נסדר את הבית</h2>
+          <p className="footnote text-muted">
+            <span className="num">
+              {total - left.length}/{total}
+            </span>{" "}
+            · אפשר בכל קצב
+          </p>
+        </div>
+        <button
+          type="button"
+          className="footnote text-muted"
+          onClick={() => {
+            setHidden(true);
+            try {
+              localStorage.setItem(key, "1");
+            } catch {
+              /* ignore */
+            }
+          }}
+        >
+          הסתרה
+        </button>
+      </div>
+      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-fill">
+        <div className="h-full rounded-full bg-primary" style={{ width: `${((total - left.length) / total) * 100}%` }} />
+      </div>
+      <ul className="space-y-0.5">
+        {left.slice(0, 3).map((x) => (
+          <li key={x.key}>
+            <Link href={x.href} className="flex items-center gap-3 rounded-xl px-1 py-2 active:bg-fill">
+              <span className="size-5 shrink-0 rounded-full shadow-[inset_0_0_0_2px_var(--muted-2)]" />
+              <span className="flex-1 text-[15px]">{x.label}</span>
+              <ChevronLeft className="size-4 text-muted-2" />
+            </Link>
+          </li>
+        ))}
       </ul>
     </section>
   );

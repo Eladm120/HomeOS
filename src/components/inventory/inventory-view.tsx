@@ -84,6 +84,7 @@ export function InventoryView({
       return void toast.error(res.error);
     }
     setItems((cur) => cur.map((i) => (i.id === item.id ? res.data : i)));
+    if (res.data.auto_listed) toast.success(`${item.name} ירד מתחת למינימום ונוסף לרשימת הקניות 🛒`);
   }
 
   async function toList(item: InventoryItem) {

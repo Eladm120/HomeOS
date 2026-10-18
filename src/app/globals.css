@@ -12,18 +12,18 @@
   --accent: #3b7657;
 
   /* Grouped backgrounds */
-  --background: color-mix(in oklab, var(--accent) 5%, #f6f6f4);
+  --background: #f6f1ea;
   --surface: #ffffff;
-  --surface-2: color-mix(in oklab, var(--accent) 7%, #f0f1ee);
-  --surface-3: color-mix(in oklab, var(--accent) 9%, #e4e6e2);
-  --fill: color-mix(in oklab, #1a1e1c 7%, transparent);
-  --fill-strong: color-mix(in oklab, #1a1e1c 12%, transparent);
+  --surface-2: #f1ebe2;
+  --surface-3: #e8e0d4;
+  --fill: color-mix(in oklab, #3a2f25 7%, transparent);
+  --fill-strong: color-mix(in oklab, #3a2f25 12%, transparent);
 
   /* Labels */
-  --foreground: #1a1e1c;
-  --muted: color-mix(in oklab, var(--accent) 12%, #666c69);
+  --foreground: #2a2420;
+  --muted: #7a6f66;
   --muted-2: color-mix(in oklab, #1a1e1c 30%, transparent);
-  --border: color-mix(in oklab, #1a1e1c 12%, transparent);
+  --border: color-mix(in oklab, #3a2f25 9%, transparent);
   --ring: var(--accent);
 
   /* Tint + semantic colours */
@@ -53,18 +53,25 @@
   --glass-bg: color-mix(in oklab, #ffffff 80%, transparent);
   --glass-border: color-mix(in oklab, #1a1e1c 8%, transparent);
   --glass-highlight: rgba(255, 255, 255, 0.9);
-  --glass-shadow: 0 1px 2px rgba(25, 35, 30, 0.05), 0 8px 24px rgba(25, 35, 30, 0.07);
+  --glass-shadow: 0 1px 2px rgba(60, 40, 20, 0.05), 0 8px 24px rgba(60, 40, 20, 0.08);
 
-  --radius: 1.375rem;
+  --radius: 1.5rem;
+
+  /* Cozy warm accents */
+  --terracotta: #c0643f;
+  --terracotta-soft: #f7e3d8;
+  --honey: #d99a2b;
+  --honey-soft: #fbefd6;
+  --card-shadow: 0 1px 2px rgba(60, 40, 20, 0.04), 0 6px 20px rgba(60, 40, 20, 0.06);
 }
 
 .dark {
   --accent: #86c9a3;
 
-  --background: color-mix(in oklab, var(--accent) 6%, #0f1211);
-  --surface: color-mix(in oklab, var(--accent) 6%, #181b1a);
-  --surface-2: color-mix(in oklab, var(--accent) 8%, #212524);
-  --surface-3: color-mix(in oklab, var(--accent) 10%, #2b302e);
+  --background: #14110f;
+  --surface: #1d1916;
+  --surface-2: #25201c;
+  --surface-3: #2f2924;
   --fill: color-mix(in oklab, #edf0ee 9%, transparent);
   --fill-strong: color-mix(in oklab, #edf0ee 15%, transparent);
 
@@ -99,6 +106,12 @@
   --glass-border: color-mix(in oklab, #edf0ee 10%, transparent);
   --glass-highlight: rgba(255, 255, 255, 0.06);
   --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+
+  --terracotta: #f0a07c;
+  --terracotta-soft: #3a261d;
+  --honey: #f0c46a;
+  --honey-soft: #362b17;
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 @theme inline {
@@ -129,10 +142,14 @@
   --color-pink: var(--pink);
   --color-yellow: var(--yellow);
   --color-purple: var(--purple);
+  --color-terracotta: var(--terracotta);
+  --color-terracotta-soft: var(--terracotta-soft);
+  --color-honey: var(--honey);
+  --color-honey-soft: var(--honey-soft);
 
   /* SF on Apple devices (incl. SF Hebrew), Heebo elsewhere */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Hebrew", var(--font-heebo), system-ui, sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Hebrew", var(--font-heebo), system-ui, sans-serif;
+  --font-display: var(--font-rubik), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Hebrew", var(--font-heebo), system-ui, sans-serif;
 
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 12px rgba(0, 0, 0, 0.04);
   --shadow-lift: 0 10px 40px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.06);
@@ -217,7 +234,11 @@ body {
     letter-spacing: -0.025em;
   }
   .title-2 { font-family: var(--font-display); font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; }
-  .headline { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.015em; }
+  .headline { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; }
+
+  /* ---- Cozy card: borderless warm surface with a soft lift ------------------- */
+  .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--card-shadow); }
+  .dark .card { border: 0.5px solid var(--border); }
   .footnote { font-size: 0.8125rem; letter-spacing: -0.005em; }
   .caption { font-size: 0.75rem; letter-spacing: 0; }
   .section-label { font-size: 0.8125rem; font-weight: 400; text-transform: none; color: var(--muted); padding-inline: 1rem; }

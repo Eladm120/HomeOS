@@ -6,6 +6,7 @@ import type { ActionResult, ShoppingListItem } from "@/lib/types";
 import { flattenZodError, itemStatusSchema, shoppingItemSchema, type ShoppingItemInput } from "@/lib/validation";
 import { escapeLike } from "@/lib/utils";
 import { assertOwnPath, dbFail, fail, ok, withHousehold } from "@/server/action-utils";
+import { listInventoryItem } from "@/server/auto-restock";
 import type { HouseholdContext } from "@/server/context";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -336,43 +337,10 @@ export async function finishShoppingTrip(input: z.input<typeof finishTripSchema>
 export async function addInventoryItemToList(inventoryItemId: string): Promise<ActionResult<{ created: boolean }>> {
   if (!z.uuid().safeParse(inventoryItemId).success) return fail("מזהה לא תקין");
   return withHousehold<{ created: boolean }>(async (ctx, supabase) => {
-    const { data: inv } = await supabase
-      .from("inventory_items")
-      .select("id, name, brand, unit, category_id, image_path, catalog_product_id, restock_quantity")
-      .eq("id", inventoryItemId)
-      .eq("household_id", ctx.household.id)
-      .maybeSingle();
-    if (!inv) return fail("המוצר לא נמצא");
-
-    const { data: existing } = await supabase
-      .from("shopping_list_items")
-      .select("id")
-      .eq("household_id", ctx.household.id)
-      .eq("inventory_item_id", inv.id)
-      .eq("status", "pending")
-      .is("deleted_at", null)
-      .is("cleared_at", null)
-      .limit(1)
-      .maybeSingle();
-    if (existing) return ok({ created: false });
-
-    const listId = await defaultListId(supabase, ctx.household.id);
-    if (!listId) return fail("לא נמצאה רשימת קניות");
-    const { error } = await supabase.from("shopping_list_items").insert({
-      household_id: ctx.household.id,
-      list_id: listId,
-      name: inv.name,
-      brand: inv.brand,
-      unit: inv.unit,
-      quantity: inv.restock_quantity ?? 1,
-      category_id: inv.category_id,
-      image_path: inv.image_path,
-      catalog_product_id: inv.catalog_product_id,
-      inventory_item_id: inv.id,
-    });
-    if (error) return dbFail("grocery.from_inventory", error);
+    const res = await listInventoryItem(supabase, ctx.household.id, inventoryItemId);
+    if ("error" in res) return dbFail("grocery.from_inventory", res.error as Error);
     revalidatePath("/shopping");
     revalidatePath("/");
-    return ok({ created: true });
+    return ok({ created: res.created });
   });
 }

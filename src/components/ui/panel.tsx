@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 export function Panel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("overflow-hidden rounded-[var(--radius)] border border-border bg-surface [&>*+*]:border-t [&>*+*]:border-border", className)}
+      className={cn("card overflow-hidden [&>*+*]:border-t [&>*+*]:border-border", className)}
       {...props}
     />
   );

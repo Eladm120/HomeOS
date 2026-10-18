@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ASSISTANT_ITEM, NAV_ITEMS, isActive } from "./nav-items";
 import { ThemeToggle } from "./theme-toggle";
-import { HUB_SECTIONS } from "./hub-sections";
+import { HUB_LINKS } from "./hub-sections";
 
-const SIDEBAR_LINKS = HUB_SECTIONS.flatMap((s) => s.items).map((i) => ({ href: i.href, label: i.label }));
+const SIDEBAR_LINKS = HUB_LINKS.map((i) => ({ href: i.href, label: i.label }));
 
 /**
  * Floating Liquid Glass tab bar (iOS 26 style): a glass capsule with a sliding
