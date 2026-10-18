@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { addShoppingItem, deleteShoppingItem, restoreShoppingItem } from "@/server/actions/grocery";
 import { useGroceryList, type SyncState } from "@/hooks/use-grocery-list";
 import { useOpenFromQuery } from "@/hooks/use-open-from-query";
-import { groupByCategory, splitByStatus } from "@/lib/grocery";
+import { groupByCategory, splitByStatus, suggestProducts } from "@/lib/grocery";
 import { categoryStyle, guessCategoryId } from "@/lib/category-style";
 import { parseBulkLine } from "@/lib/validation";
 import type { ProductCategory, ShoppingListItem } from "@/lib/types";
@@ -18,6 +18,7 @@ import { SwipeRow } from "@/components/ui/swipe-row";
 import { GroceryItemRow } from "./item-row";
 import { GroceryItemSheet } from "./item-sheet";
 import { FinishTripSheet, type InventoryOption } from "./finish-trip-sheet";
+import { Highlight } from "@/components/ui/product-combobox";
 
 export interface GroceryViewProps {
   householdId: string;
@@ -84,6 +85,8 @@ export function GroceryView(props: GroceryViewProps) {
   const groups = useMemo(() => groupByCategory(pending, props.categories), [pending, props.categories]);
   const total = pending.length + done.length;
   const parsed = useMemo(() => parseBulkLine(draft), [draft]);
+  // Products the home already knows whose name contains what's being typed ("חלב" → חלב, חלב סויה…).
+  const suggestions = useMemo(() => (parsed && parsed.name.length >= 2 ? suggestProducts(parsed.name, props.inventory, 6) : []), [parsed, props.inventory]);
 
   const nameOf = (id: string | null) => (id && id !== props.currentUserId ? props.memberNames[id] || undefined : undefined);
 
@@ -127,12 +130,24 @@ export function GroceryView(props: GroceryViewProps) {
   async function quickAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!parsed) return;
+    await add(parsed.name, parsed.unit, null);
+  }
+
+  /** Tap a suggestion: add that exact product, linked to its inventory item, with the typed quantity. */
+  async function addSuggestion(s: InventoryOption) {
+    if (!parsed) return;
+    await add(s.name, parsed.unit === "יח׳" ? s.unit : parsed.unit, s.id);
+  }
+
+  async function add(name: string, unit: string, inventoryId: string | null) {
+    if (!parsed || adding) return;
     setAdding(true);
     const res = await addShoppingItem({
-      name: parsed.name,
+      name,
       quantity: parsed.quantity,
-      unit: parsed.unit,
-      category_id: guessCategoryId(parsed.name, props.categories),
+      unit,
+      category_id: guessCategoryId(name, props.categories),
+      inventory_item_id: inventoryId,
       save_to_catalog: false,
     });
     setAdding(false);
@@ -140,8 +155,8 @@ export function GroceryView(props: GroceryViewProps) {
     upsertLocal(res.data.item);
     setDraft("");
     const cat = res.data.item.category_id ? catById.get(res.data.item.category_id) : null;
-    if (res.data.merged) toast.success(`${parsed.name} כבר ברשימה, עדכנתי את הכמות`);
-    else if (cat) toast(`${parsed.name} נוסף ל${cat.name}`);
+    if (res.data.merged) toast.success(`${name} כבר ברשימה, עדכנתי את הכמות`);
+    else if (cat) toast(`${name} נוסף ל${cat.name}`);
   }
 
   async function remove(item: ShoppingListItem) {
@@ -310,7 +325,28 @@ export function GroceryView(props: GroceryViewProps) {
               <PackageCheck /> סיום קנייה · עדכון המלאי
             </Button>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="relative flex items-center gap-2">
+              {suggestions.length > 0 && (
+                <div className="absolute inset-x-0 bottom-full mb-2">
+                  <div>
+                    <div role="listbox" aria-label="הצעות מהמלאי" className="glass scrollbar-none flex gap-1.5 overflow-x-auto rounded-2xl p-1.5">
+                      {suggestions.map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          role="option"
+                          aria-selected={false}
+                          disabled={adding}
+                          onClick={() => addSuggestion(s)}
+                          className="pressable flex h-9 shrink-0 items-center gap-1 rounded-full bg-surface px-3 text-[15px] shadow-[var(--card-shadow)]"
+                        >
+                          <Highlight text={s.name} query={parsed?.name ?? ""} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
               <form onSubmit={quickAdd} className="glass flex min-w-0 flex-1 items-center gap-1.5 rounded-full p-1.5">
                 <button type="button" onClick={openNew} className="pressable grid size-10 shrink-0 place-items-center rounded-full bg-fill text-foreground/80" aria-label="הוספה עם תמונה ופרטים">
                   <Camera className="size-5" />

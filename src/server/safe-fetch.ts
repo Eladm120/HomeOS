@@ -46,7 +46,14 @@ export async function assertPublicUrl(raw: string): Promise<URL> {
   return url;
 }
 
-export async function safeFetchText(raw: string, accept = "text/html,application/xhtml+xml,application/json"): Promise<{ url: string; text: string; contentType: string }> {
+/** Link-preview crawlers get the public og: tags (title, caption, cover) that social sites publish for sharing. */
+export const PREVIEW_USER_AGENT = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)";
+
+export async function safeFetchText(
+  raw: string,
+  accept = "text/html,application/xhtml+xml,application/json",
+  userAgent = "Mozilla/5.0 (compatible; HomeOS recipe importer; +https://homeos-one-psi.vercel.app)",
+): Promise<{ url: string; text: string; contentType: string }> {
   let current = raw;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const url = await assertPublicUrl(current);
@@ -60,7 +67,7 @@ export async function safeFetchText(raw: string, accept = "text/html,application
         headers: {
           accept,
           "accept-language": "he-IL,he;q=0.9,en;q=0.8",
-          "user-agent": "Mozilla/5.0 (compatible; HomeOS recipe importer; +https://homeos-one-psi.vercel.app)",
+          "user-agent": userAgent,
         },
       });
     } finally {

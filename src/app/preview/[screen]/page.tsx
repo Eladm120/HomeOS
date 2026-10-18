@@ -11,6 +11,7 @@ import { productEmoji } from "@/lib/category-style";
 import { frequencyText } from "@/lib/labels";
 import { addDays, daysUntil, formatHebrewCalendarDate, formatLongDate, greetingFor, todayInZone } from "@/lib/format";
 import { HID, ME, PARTNER, categories, groceries, inventory, locations, memberNames } from "../fixtures";
+import { normalizeLayout } from "@/lib/dashboard";
 import * as mods from "../fixtures-modules";
 
 /**
@@ -37,58 +38,10 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
   let content: React.ReactNode;
   let path = "/";
   switch (screen) {
-    case "home": {
-      const pending = groceries.filter((g) => g.status === "pending");
-      const today = todayInZone(now);
-      const chores = mods.chores.filter((c) => daysUntil(c.next_due_on) <= 1);
-      content = (
-        <Dashboard
-          preview
-          greeting={`${greetingFor(now)}, אלעד ונעה`}
-          dateLine={`${formatLongDate(now)} · ${formatHebrewCalendarDate(now)}`}
-          householdId={HID}
-          members={[
-            { id: ME, name: "אלעד" },
-            { id: PARTNER, name: "נעה" },
-          ]}
-          currentUserId={ME}
-          isAlone={false}
-          isOwner
-          alerts={buildAlerts({
-            today,
-            now,
-            inventory,
-            onListInventoryIds: new Set([inventory[0].id]),
-            chores: [],
-            bills: [{ id: "00000000-0000-4000-8000-00000000b111", label: "חברת החשמל", amount: 412.5, due_on: addDays(today, 2) }],
-            charges: [{ id: "00000000-0000-4000-8000-00000000c111", title: "שכר דירה", amount: 5800, next_due_on: addDays(today, 1) }],
-            plants: [{ id: "00000000-0000-4000-8000-00000000d111", name: "מונסטרה", watering_interval_days: 7, last_watered_on: addDays(today, -9) }],
-            suggestions: [],
-          })}
-          tasks={chores.map((c) => ({
-            id: c.id,
-            title: c.title,
-            days: daysUntil(c.next_due_on),
-            assigneeId: c.assignee_id,
-            assigneeName: c.assignee_id ? memberNames[c.assignee_id as keyof typeof memberNames] : null,
-            detail: [c.assignee_id ? memberNames[c.assignee_id as keyof typeof memberNames] : "משותף", frequencyText(c.frequency, c.interval_days)].join(" · "),
-          }))}
-          grocery={{
-            count: pending.length,
-            urgent: pending.filter((g) => g.priority === "high").length,
-            inCart: groceries.length - pending.length,
-            items: pending.slice(0, 8).map((g) => ({ id: g.id, name: g.name, emoji: productEmoji(g.name, categories.find((c) => c.id === g.category_id)) })),
-          }}
-          meals={[{ id: "m1", title: "שקשוקה", slot: "ערב", href: "/recipes", image_path: null, image_url: null }]}
-          signedUrls={{}}
-          setup={[
-            { key: "a", label: "להזין את המלאי בבית", href: "/inventory/setup", done: true },
-            { key: "b", label: "להוסיף משימות קבועות", href: "/chores", done: false },
-            { key: "c", label: "לשמור מתכון ראשון", href: "/recipes/new", done: false },
-          ]}
-          unreadNotifications={2}
-        />
-      );
+    case "home":
+    case "home-partial":
+    case "home-new": {
+      content = <Dashboard {...dashboardFixture(screen, now)} />;
       break;
     }
     case "household":
@@ -137,4 +90,95 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
       <BottomNav forcePath={path} />
     </div>
   );
+}
+
+/** Three household stages for the home screen: active, partly set up, brand new. */
+function dashboardFixture(screen: string, now: Date): React.ComponentProps<typeof Dashboard> {
+  const today = todayInZone(now);
+  const stage = screen === "home-new" ? "new" : screen === "home-partial" ? "partial" : "active";
+  const active = stage === "active";
+  const pending = active ? groceries.filter((g) => g.status === "pending") : stage === "partial" ? groceries.filter((g) => g.status === "pending").slice(0, 2) : [];
+  const chores = active ? mods.chores.filter((c) => daysUntil(c.next_due_on) <= 1) : [];
+  const alerts = active
+    ? buildAlerts({
+        today,
+        now,
+        inventory,
+        onListInventoryIds: new Set([inventory[0].id]),
+        chores: [],
+        bills: [{ id: "00000000-0000-4000-8000-00000000b111", label: "חברת החשמל", amount: 412.5, due_on: addDays(today, 2) }],
+        charges: [{ id: "00000000-0000-4000-8000-00000000c111", title: "שכר דירה", amount: 5800, next_due_on: addDays(today, 1) }],
+        plants: [{ id: "00000000-0000-4000-8000-00000000d111", name: "מונסטרה", watering_interval_days: 7, last_watered_on: addDays(today, -9) }],
+        suggestions: [{ id: "00000000-0000-4000-8000-00000000e111", kind: "warranty", title: "האחריות על המקרר מסתיימת בעוד 3 שבועות", body: null, href: "/appliances", priority: "normal" }],
+      })
+    : [];
+  return {
+    preview: true,
+    householdId: HID,
+    householdName: "הבית של אלעד ונעה",
+    greeting: greetingFor(now),
+    userName: "אלעד",
+    dateLine: `${formatLongDate(now)} · ${formatHebrewCalendarDate(now)}`,
+    members: stage === "new" ? [{ id: ME, name: "אלעד" }] : [
+      { id: ME, name: "אלעד" },
+      { id: PARTNER, name: "נעה" },
+    ],
+    currentUserId: ME,
+    isOwner: true,
+    stage,
+    layout: normalizeLayout(null),
+    unreadNotifications: active ? 2 : 0,
+    alerts,
+    grocery: {
+      count: pending.length,
+      urgent: pending.filter((g) => g.priority === "high").length,
+      inCart: active ? groceries.length - pending.length : 0,
+      items: pending.slice(0, 5).map((g) => ({
+        id: g.id,
+        name: g.name,
+        quantity: Number(g.quantity),
+        unit: g.unit,
+        image_path: null,
+        urgent: g.priority === "high",
+        emoji: productEmoji(g.name, categories.find((c) => c.id === g.category_id)),
+      })),
+    },
+    categories,
+    inventory: inventory.map((i) => ({ id: i.id, name: i.name, unit: i.unit })),
+    tasks: chores.map((c) => ({
+      id: c.id,
+      title: c.title,
+      days: daysUntil(c.next_due_on),
+      assigneeId: c.assignee_id,
+      assigneeName: c.assignee_id ? memberNames[c.assignee_id as keyof typeof memberNames] : null,
+      detail: [c.assignee_id ? memberNames[c.assignee_id as keyof typeof memberNames] : "משותף", frequencyText(c.frequency, c.interval_days)].join(" · "),
+    })),
+    tasksDoneToday: active ? 1 : 0,
+    meals: active ? [{ id: "m1", title: "שקשוקה", slot: "ערב", href: "/recipes", image_path: null, image_url: null }] : [],
+    readyRecipes: active ? mods.recipes.slice(0, 3).map((r) => ({ id: r.id, title: r.title, image_path: null, image_url: null, minutes: 25 })) : [],
+    hasStock: stage !== "new",
+    smartHome: active
+      ? {
+          connected: true,
+          devices: [
+            { id: "d1", name: "מזגן סלון", kind: "climate", online: true, state: "cool", attributes: { temperature: 24, current_temperature: 27 }, capabilities: { power: true }, room: "סלון" },
+            { id: "d2", name: "דוד", kind: "water_heater", online: true, state: "off", attributes: {}, capabilities: { power: true }, room: null },
+            { id: "d3", name: "אור מרפסת", kind: "light", online: true, state: "on", attributes: {}, capabilities: { power: true }, room: "מרפסת" },
+            { id: "d4", name: "טמפ׳ חדר שינה", kind: "sensor", online: true, state: "23.5", attributes: { unit_of_measurement: "°C" }, capabilities: {}, room: null },
+          ],
+        }
+      : { connected: false, devices: [] },
+    projects: active ? mods.projects.slice(0, 2).map((pr, k) => ({ id: pr.id, title: pr.title, kind: pr.kind, status: pr.status, done: k, total: k ? 3 : 0 })) : [],
+    purchases: active ? mods.purchases.slice(0, 1).map((pu) => ({ id: pu.id, name: pu.name, status: pu.status })) : [],
+    setup: [
+      { key: "inventory", label: "להזין את המלאי בבית", href: "/inventory/setup", done: stage !== "new" },
+      { key: "grocery", label: "להוסיף מוצר ראשון לרשימת הקניות", href: "/shopping", done: stage !== "new" },
+      { key: "chores", label: "להוסיף משימות קבועות", href: "/chores?new=1", done: active },
+      { key: "recipes", label: "לשמור מתכון ראשון", href: "/recipes/new", done: active },
+      { key: "partner", label: "להזמין את בן/בת הזוג", href: "/household/settings", done: stage !== "new" },
+      { key: "prefs", label: "לבחור על מה לקבל התראות", href: "/settings/notifications", done: false },
+    ],
+    signedUrls: {},
+    failed: [],
+  };
 }

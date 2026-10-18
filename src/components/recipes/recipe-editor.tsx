@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, ClipboardPaste, Link2, Loader2, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
@@ -36,8 +36,11 @@ export function RecipeEditor({
   steps = [],
   categories,
   aiEnabled = false,
+  sharedUrl = null,
 }: {
   aiEnabled?: boolean;
+  /** A link shared into the app (share sheet, dashboard) — imported right away. */
+  sharedUrl?: string | null;
   householdId: string;
   recipe: Recipe | null;
   ingredients?: RecipeIngredient[];
@@ -116,14 +119,38 @@ export function RecipeEditor({
     setNotice(d.notice);
   }
 
-  async function runImport() {
-    if (!importUrl.trim()) return;
+  async function runImport(link = importUrl) {
+    if (!link.trim()) return;
     setImporting(true);
-    const res = await importRecipeFromUrl(importUrl.trim());
+    const res = await importRecipeFromUrl(link.trim());
     setImporting(false);
     if (!res.ok) return void toast.error(res.error);
     applyDraft(res.data);
-    toast.success(res.data.completeness === "full" ? "המתכון יובא. בדקו ושמרו." : "חלק מהפרטים יובאו");
+    if (res.data.completeness === "full") toast.success("המתכון יובא. בדקו ושמרו.");
+    else if (res.data.ingredients.length) toast.success("חלק מהפרטים יובאו");
+  }
+
+  // Shared from Instagram/TikTok (or the dashboard): import without another tap.
+  const sharedDone = useRef(false);
+  useEffect(() => {
+    if (!sharedUrl || recipe || sharedDone.current) return;
+    sharedDone.current = true;
+    setImportUrl(sharedUrl);
+    void runImport(sharedUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once for the shared link
+  }, [sharedUrl, recipe]);
+
+  /** One tap after "Copy link" in Instagram: read the link from the clipboard and import it. */
+  async function pasteAndImport() {
+    try {
+      const text = await navigator.clipboard.readText();
+      const link = text.match(/https?:\/\/\S+/)?.[0];
+      if (!link) return void toast.error("בלוח אין קישור. העתיקו את הקישור לפוסט ונסו שוב.");
+      setImportUrl(link);
+      await runImport(link);
+    } catch {
+      toast.error("אין גישה ללוח. הדביקו את הקישור בשדה.");
+    }
   }
 
   async function runPaste() {
@@ -186,12 +213,18 @@ export function RecipeEditor({
             <h2 className="headline flex items-center gap-2">
               <Link2 className="size-5 text-primary" /> ייבוא מקישור
             </h2>
-            <p className="footnote text-muted">אתר מתכונים, TikTok, YouTube או Instagram. מה שנמצא ימולא כאן לבדיקה, ושום דבר לא נשמר בלי אישור.</p>
+            <p className="footnote text-muted">אתר מתכונים, Instagram, TikTok או YouTube. מעתיקים את הקישור לפוסט ולוחצים ״הדבקה״ — נקרא את התיאור ונמלא מצרכים והוראות לבדיקה. שום דבר לא נשמר בלי אישור.</p>
             <div className="flex gap-2">
               <Input dir="ltr" inputMode="url" value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://" aria-label="קישור למתכון" />
-              <Button onClick={runImport} loading={importing} disabled={!importUrl.trim()}>
-                ייבוא
-              </Button>
+              {importUrl.trim() ? (
+                <Button onClick={() => runImport()} loading={importing}>
+                  ייבוא
+                </Button>
+              ) : (
+                <Button onClick={pasteAndImport} loading={importing}>
+                  <ClipboardPaste /> הדבקה
+                </Button>
+              )}
             </div>
             <button type="button" onClick={() => setShowPaste((v) => !v)} className="flex items-center gap-1.5 text-[15px] font-medium text-primary">
               <ClipboardPaste className="size-4" /> הדבקת טקסט (למשל תיאור של פוסט)

@@ -52,3 +52,39 @@ export function matchInventory<T extends { id: string; name: string }>(item: Pic
   const n = item.name.trim().toLowerCase();
   return inventory.find((i) => i.name.trim().toLowerCase() === n) ?? null;
 }
+
+/** Lowercase, no niqqud, one kind of quote mark, single spaces — so "חלב" finds "חָלָב" and "חלב  סויה". */
+export function normalizeProductName(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[֑-ׇ]/g, "")
+    .replace(/[׳'`´]/g, "'")
+    .replace(/[״"]/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Autocomplete for product names: every candidate that contains what was typed,
+ * best first — exact name, then names that start with it, then a word that
+ * starts with it, then anywhere. "חלב" → חלב, חלב סויה, חלב שקדים, שוקו חלב.
+ */
+export function suggestProducts<T extends { name: string }>(query: string, candidates: T[], limit = 6): T[] {
+  const q = normalizeProductName(query);
+  if (!q) return [];
+  const seen = new Set<string>();
+  const scored: { item: T; score: number; len: number; name: string }[] = [];
+  for (const item of candidates) {
+    const name = normalizeProductName(item.name);
+    if (!name || seen.has(name)) continue;
+    const at = name.indexOf(q);
+    if (at < 0) continue;
+    seen.add(name);
+    const score = name === q ? 0 : at === 0 ? 1 : name.split(" ").some((w) => w.startsWith(q)) ? 2 : 3;
+    scored.push({ item, score, len: name.length, name });
+  }
+  return scored
+    .sort((a, b) => a.score - b.score || a.len - b.len || a.name.localeCompare(b.name, "he"))
+    .slice(0, limit)
+    .map((s) => s.item);
+}

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileText, Pencil, Plus, Trash2, Wrench } from "lucide-react";
+import { Check, Pencil, Plus, Trash2, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { addMaintenance, deleteAppliance, saveAppliance } from "@/server/actions/admin";
 import type { Appliance, ApplianceMaintenance, Attachment, HomeProject, HouseholdDocument, Room, ServiceProvider } from "@/lib/types";
@@ -61,14 +61,11 @@ export function ApplianceDetail({
     router.refresh();
   }
 
-  const rows: [string, string | null][] = [
-    ["יצרן ודגם", [a.brand, a.model].filter(Boolean).join(" ") || null],
-    ["מספר סידורי", a.serial_number],
-    ["חדר", rooms.find((r) => r.id === a.room_id)?.name ?? null],
-    ["נקנה", a.purchased_on ? `${formatShortDate(a.purchased_on)}${a.store ? ` · ${a.store}` : ""}` : a.store],
-    ["מחיר", a.purchase_price != null ? formatCurrency(Number(a.purchase_price), a.currency) : null],
-    ["אחריות", a.warranty_until ? `עד ${formatShortDate(a.warranty_until)}${a.warranty_provider ? ` · ${a.warranty_provider}` : ""}` : null],
-  ];
+  const room = rooms.find((r) => r.id === a.room_id)?.name ?? null;
+  const bought = [a.store, a.purchased_on ? formatShortDate(a.purchased_on) : null, a.purchase_price != null ? formatCurrency(Number(a.purchase_price), a.currency) : null].filter(Boolean).join(" · ");
+  const service = [["יצרן ודגם", [a.brand, a.model].filter(Boolean).join(" ") || null], ["מספר סידורי", a.serial_number], ["חדר", room]].filter(([, v]) => v) as [string, string][];
+  const folder = [!!bought, !!invoice, !!a.warranty_until, !!manual];
+  const filled = folder.filter(Boolean).length;
 
   return (
     <>
@@ -99,31 +96,53 @@ export function ApplianceDetail({
           </div>
         </section>
 
-        <Panel>
-          {rows
-            .filter(([, v]) => v)
-            .map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-4 px-4 py-3 text-[15px]">
-                <span className="text-muted">{k}</span>
-                <span className="text-end">{v}</span>
-              </div>
-            ))}
-          {a.notes && <p className="px-4 py-3 text-[15px] whitespace-pre-wrap">{a.notes}</p>}
-        </Panel>
-
         <section>
-          <PanelHeading title="חשבונית והוראות שימוש" />
+          <PanelHeading title="התיק של המכשיר" action={<span className="num footnote text-muted">{filled}/4</span>} />
           <Panel>
-            {(["invoice", "manual"] as const).map((kind) => {
-              const d = kind === "invoice" ? invoice : manual;
-              return d ? (
-                <PanelRow key={kind} href={`/documents/${d.id}`} leading={<FileText className="size-5 text-primary" />} title={kind === "invoice" ? "חשבונית" : "הוראות שימוש"} subtitle={d.title} />
-              ) : (
-                <PanelRow key={kind} onClick={() => setUpload(kind)} leading={<Plus className="size-5 text-primary" />} title={kind === "invoice" ? "הוספת חשבונית" : "הוספת הוראות שימוש"} subtitle="PDF או צילום" chevron={false} />
-              );
-            })}
+            <PanelRow
+              onClick={() => setEdit(true)}
+              leading={<FolderIcon emoji="🛒" done={!!bought} />}
+              title="מאיפה קניתי"
+              subtitle={bought || "חנות, תאריך ומחיר"}
+              chevron={false}
+            />
+            {invoice ? (
+              <PanelRow href={`/documents/${invoice.id}`} leading={<FolderIcon emoji="🧾" done />} title="קבלה" subtitle={invoice.title} />
+            ) : (
+              <PanelRow onClick={() => setUpload("invoice")} leading={<FolderIcon emoji="🧾" />} title="קבלה" subtitle="צילום או PDF" trailing={<Plus className="size-5 text-primary" />} chevron={false} />
+            )}
+            <PanelRow
+              onClick={() => setEdit(true)}
+              leading={<FolderIcon emoji="🛡️" done={!!a.warranty_until} />}
+              title="אחריות"
+              subtitle={a.warranty_until ? [`עד ${formatShortDate(a.warranty_until)}`, a.warranty_provider].filter(Boolean).join(" · ") : "כמה זמן ולמי פונים"}
+              trailing={badge ? <Badge tone={badge.tone}>{badge.tone === "sage" ? "בתוקף" : badge.text}</Badge> : undefined}
+              chevron={false}
+            />
+            {manual ? (
+              <PanelRow href={`/documents/${manual.id}`} leading={<FolderIcon emoji="📘" done />} title="הוראות שימוש" subtitle={manual.title} />
+            ) : (
+              <PanelRow onClick={() => setUpload("manual")} leading={<FolderIcon emoji="📘" />} title="הוראות שימוש" subtitle="PDF מהיצרן" trailing={<Plus className="size-5 text-primary" />} chevron={false} />
+            )}
           </Panel>
         </section>
+
+        {(service.length > 0 || a.notes) && (
+          <section>
+            <PanelHeading title="לטכנאי" />
+            <Panel>
+              {service.map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4 px-4 py-3 text-[15px]">
+                  <span className="text-muted">{k}</span>
+                  <span className="text-end" dir="auto">
+                    {v}
+                  </span>
+                </div>
+              ))}
+              {a.notes && <p className="px-4 py-3 text-[15px] whitespace-pre-wrap">{a.notes}</p>}
+            </Panel>
+          </section>
+        )}
 
         <section>
           <PanelHeading
@@ -267,5 +286,18 @@ function MaintenanceSheet({ open, onOpenChange, applianceId, providers }: { open
         </div>
       </div>
     </Sheet>
+  );
+}
+
+function FolderIcon({ emoji, done }: { emoji: string; done?: boolean }) {
+  return (
+    <span aria-hidden className="relative grid size-10 shrink-0 place-items-center rounded-xl bg-fill text-[19px]">
+      {emoji}
+      {done && (
+        <span className="absolute -end-1 -bottom-1 grid size-[18px] place-items-center rounded-full bg-sage text-white ring-2 ring-surface">
+          <Check className="size-3" strokeWidth={3.5} />
+        </span>
+      )}
+    </span>
   );
 }
