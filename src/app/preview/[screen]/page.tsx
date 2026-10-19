@@ -18,7 +18,7 @@ import * as mods from "../fixtures-modules";
  * Development-only design preview with sample data (no login, no database).
  * Lets us review and screenshot real components. 404 in production.
  */
-export default async function PreviewPage({ params }: { params: Promise<{ screen: string }> }) {
+export default async function PreviewPage({ params, searchParams }: { params: Promise<{ screen: string }>; searchParams: Promise<{ g?: string }> }) {
   if (process.env.NODE_ENV !== "development") notFound();
   const { screen } = await params;
   const now = new Date();
@@ -41,7 +41,8 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
     case "home":
     case "home-partial":
     case "home-new": {
-      content = <Dashboard {...dashboardFixture(screen, now)} />;
+      const g = (await searchParams).g;
+      content = <Dashboard {...dashboardFixture(screen, now)} {...(g ? { greeting: g } : {})} />;
       break;
     }
     case "household":

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Heebo, IBM_Plex_Sans_Hebrew } from "next/font/google";
+import { Frank_Ruhl_Libre, Heebo, IBM_Plex_Sans_Hebrew } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -7,6 +7,9 @@ import "./globals.css";
 const heebo = Heebo({ subsets: ["hebrew", "latin"], variable: "--font-heebo", display: "swap" });
 // Display face where SF isn't available: crisp, editorial Hebrew.
 const plex = IBM_Plex_Sans_Hebrew({ subsets: ["hebrew", "latin"], weight: ["400", "500", "600", "700"], variable: "--font-plex", display: "swap" });
+
+// Editorial Hebrew serif for headlines: the voice of the app.
+const serif = Frank_Ruhl_Libre({ subsets: ["hebrew", "latin"], variable: "--font-serif", display: "swap" });
 
 /** Apply the member's accent before first paint (no flash of the default colour). */
 const ACCENT_SCRIPT = `try{var a=localStorage.getItem("homeos:accent");if(a&&/^(peach|mint|sky)$/.test(a))document.documentElement.dataset.accent=a}catch(e){}`;
@@ -39,7 +42,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <script dangerouslySetInnerHTML={{ __html: ACCENT_SCRIPT }} />
       </head>
-      <body className={`${heebo.variable} ${plex.variable} antialiased`}>
+      <body className={`${heebo.variable} ${plex.variable} ${serif.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>
