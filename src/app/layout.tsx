@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Heebo, Rubik } from "next/font/google";
+import { Heebo, IBM_Plex_Sans_Hebrew } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
 // Apple devices render SF / SF Hebrew via the system stack; Heebo is the fallback elsewhere.
 const heebo = Heebo({ subsets: ["hebrew", "latin"], variable: "--font-heebo", display: "swap" });
-// Rounded, friendly display face for titles (Hebrew + Latin).
-const rubik = Rubik({ subsets: ["hebrew", "latin"], variable: "--font-rubik", display: "swap" });
+// Display face where SF isn't available: crisp, editorial Hebrew.
+const plex = IBM_Plex_Sans_Hebrew({ subsets: ["hebrew", "latin"], weight: ["400", "500", "600", "700"], variable: "--font-plex", display: "swap" });
+
+/** Apply the member's accent before first paint (no flash of the default colour). */
+const ACCENT_SCRIPT = `try{var a=localStorage.getItem("homeos:accent");if(a&&/^(cobalt|forest|graphite)$/.test(a))document.documentElement.dataset.accent=a}catch(e){}`;
 
 export const metadata: Metadata = {
   title: { default: "HomeOS", template: "%s · HomeOS" },
@@ -25,15 +28,18 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f1ea" },
-    { media: "(prefers-color-scheme: dark)", color: "#14110f" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f4f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090a" },
   ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
-      <body className={`${heebo.variable} ${rubik.variable} antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: ACCENT_SCRIPT }} />
+      </head>
+      <body className={`${heebo.variable} ${plex.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

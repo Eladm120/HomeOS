@@ -3,116 +3,133 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =============================================================================
-   HomeOS design language — calm, warm-neutral home palette ("sage").
-   One accent; neutrals carry a slight tint of it. Category colour lives only in
-   soft tiles (.cat-tint / .cat-ink), so lists stay quiet and readable.
-   Token names are semantic and shared by every component.
+   HomeOS design language — "lit window".
+   Neutral, almost-white rooms (no cream), crisp white surfaces with hairline
+   edges, ink-dark type, and one warm accent that each member can change
+   (ember · cobalt · forest · graphite, set on <html data-accent>).
+   Soft semantic tints stay quiet; colour is used to point, not to decorate.
    ========================================================================== */
 :root {
-  --accent: #3b7657;
+  --accent: #df4f22;
+  --accent-ink: #ffffff;
+  --accent-glow: #ff8a5c;
 
-  /* Grouped backgrounds */
-  --background: #f6f1ea;
+  /* Rooms and surfaces */
+  --background: #f4f4f2;
   --surface: #ffffff;
-  --surface-2: #f1ebe2;
-  --surface-3: #e8e0d4;
-  --fill: color-mix(in oklab, #3a2f25 7%, transparent);
-  --fill-strong: color-mix(in oklab, #3a2f25 12%, transparent);
+  --surface-2: #f2f2f0;
+  --surface-3: #e9e9e6;
+  --fill: color-mix(in oklab, #18181b 6%, transparent);
+  --fill-strong: color-mix(in oklab, #18181b 11%, transparent);
 
-  /* Labels */
-  --foreground: #2a2420;
-  --muted: #7a6f66;
-  --muted-2: color-mix(in oklab, #1a1e1c 30%, transparent);
-  --border: color-mix(in oklab, #3a2f25 9%, transparent);
+  /* Type */
+  --foreground: #121214;
+  --muted: #6c6c72;
+  --muted-2: color-mix(in oklab, #121214 28%, transparent);
+  --border: color-mix(in oklab, #121214 8%, transparent);
   --ring: var(--accent);
 
-  /* Tint + semantic colours */
+  /* Accent + semantic */
   --primary: var(--accent);
-  --primary-hover: color-mix(in oklab, var(--accent) 85%, #000);
-  --primary-soft: color-mix(in oklab, var(--accent) 13%, #ffffff);
-  --primary-foreground: #ffffff;
-  --sage: #2f7d4f;
-  --sage-soft: color-mix(in oklab, #2f7d4f 13%, #ffffff);
-  --amber: #9a6100;
-  --amber-soft: #f8eed9;
-  --danger: #c2401c;
-  --danger-soft: #fbe7df;
-  --sky: #3f6a96;
-  --sky-soft: color-mix(in oklab, #3f6a96 13%, #ffffff);
-  --teal: #2d7f86;
-  --pink: #b5476a;
-  --yellow: #a88400;
-  --purple: #7a5296;
+  --primary-hover: color-mix(in oklab, var(--accent) 88%, #000);
+  --primary-soft: color-mix(in oklab, var(--accent) 10%, #ffffff);
+  --primary-foreground: var(--accent-ink);
+  --sage: #1f8a52;
+  --sage-soft: #e8f5ed;
+  --amber: #a15c00;
+  --amber-soft: #fdf1dc;
+  --danger: #d1361b;
+  --danger-soft: #fdebe6;
+  --sky: #2f5bd8;
+  --sky-soft: #e9eefc;
+  --teal: #13808a;
+  --pink: #c23a6b;
+  --yellow: #a07c00;
+  --purple: #6d4ad1;
 
-  /* Category tiles (OKLCH lightness/chroma; hue comes from --h on the element) */
-  --tile-l: 0.945;
-  --tile-c: 0.04;
-  --ink-l: 0.48;
+  /* Category tiles (OKLCH; hue from --h on the element) — quiet, not pastel candy */
+  --tile-l: 0.955;
+  --tile-c: 0.028;
+  --ink-l: 0.46;
 
-  /* Glass materials (kept subtle) */
-  --glass-bg: color-mix(in oklab, #ffffff 80%, transparent);
-  --glass-border: color-mix(in oklab, #1a1e1c 8%, transparent);
+  --glass-bg: color-mix(in oklab, #ffffff 78%, transparent);
+  --glass-border: color-mix(in oklab, #121214 8%, transparent);
   --glass-highlight: rgba(255, 255, 255, 0.9);
-  --glass-shadow: 0 1px 2px rgba(60, 40, 20, 0.05), 0 8px 24px rgba(60, 40, 20, 0.08);
+  --glass-shadow: 0 1px 2px rgba(16, 16, 20, 0.05), 0 12px 32px -8px rgba(16, 16, 20, 0.16);
 
-  --radius: 1.5rem;
+  --radius: 1.375rem;
 
-  /* Cozy warm accents */
-  --terracotta: #c0643f;
-  --terracotta-soft: #f7e3d8;
-  --honey: #d99a2b;
-  --honey-soft: #fbefd6;
-  --card-shadow: 0 1px 2px rgba(60, 40, 20, 0.04), 0 6px 20px rgba(60, 40, 20, 0.06);
+  --terracotta: #d1471f;
+  --terracotta-soft: #fdece5;
+  --honey: #c98300;
+  --honey-soft: #fdf3dd;
+  --card-shadow: 0 0 0 0.5px var(--border), 0 1px 2px rgba(16, 16, 20, 0.04), 0 10px 28px -14px rgba(16, 16, 20, 0.14);
+
+  /* The hero (daily brief) is always a night surface, in both themes */
+  --hero: #131316;
+  --hero-ink: #f7f7f8;
 }
+
+:root[data-accent="cobalt"] { --accent: #2f55e8; --accent-glow: #7b95ff; }
+:root[data-accent="forest"] { --accent: #17784a; --accent-glow: #4fd08f; }
+:root[data-accent="graphite"] { --accent: #18181b; --accent-glow: #a1a1aa; }
 
 .dark {
-  --accent: #86c9a3;
+  --accent: #ff6a3d;
+  --accent-ink: #160803;
+  --accent-glow: #ff8a5c;
 
-  --background: #14110f;
-  --surface: #1d1916;
-  --surface-2: #25201c;
-  --surface-3: #2f2924;
-  --fill: color-mix(in oklab, #edf0ee 9%, transparent);
-  --fill-strong: color-mix(in oklab, #edf0ee 15%, transparent);
+  --background: #09090a;
+  --surface: #141416;
+  --surface-2: #1b1b1e;
+  --surface-3: #252528;
+  --fill: color-mix(in oklab, #f4f4f5 8%, transparent);
+  --fill-strong: color-mix(in oklab, #f4f4f5 14%, transparent);
 
-  --foreground: #edf0ee;
-  --muted: #9ba39f;
-  --muted-2: color-mix(in oklab, #edf0ee 30%, transparent);
-  --border: color-mix(in oklab, #edf0ee 12%, transparent);
+  --foreground: #f4f4f5;
+  --muted: #9b9ba3;
+  --muted-2: color-mix(in oklab, #f4f4f5 30%, transparent);
+  --border: color-mix(in oklab, #f4f4f5 9%, transparent);
   --ring: var(--accent);
 
   --primary: var(--accent);
-  --primary-hover: color-mix(in oklab, var(--accent) 85%, #fff);
-  --primary-soft: color-mix(in oklab, var(--accent) 18%, #181b1a);
-  --primary-foreground: #0e1311;
-  --sage: #7fcf9c;
-  --sage-soft: color-mix(in oklab, #7fcf9c 18%, #181b1a);
-  --amber: #e8b25a;
-  --amber-soft: #33291a;
-  --danger: #ff9b72;
-  --danger-soft: #3a231a;
-  --sky: #8fb6e0;
-  --sky-soft: color-mix(in oklab, #8fb6e0 18%, #181b1a);
-  --teal: #7cc8cf;
-  --pink: #e89ab3;
-  --yellow: #e5c75a;
-  --purple: #c4a3dc;
+  --primary-hover: color-mix(in oklab, var(--accent) 88%, #fff);
+  --primary-soft: color-mix(in oklab, var(--accent) 16%, #141416);
+  --primary-foreground: var(--accent-ink);
+  --sage: #5fd394;
+  --sage-soft: color-mix(in oklab, #5fd394 14%, #141416);
+  --amber: #f2b452;
+  --amber-soft: color-mix(in oklab, #f2b452 14%, #141416);
+  --danger: #ff8466;
+  --danger-soft: color-mix(in oklab, #ff8466 14%, #141416);
+  --sky: #8eaaff;
+  --sky-soft: color-mix(in oklab, #8eaaff 14%, #141416);
+  --teal: #6fd0d8;
+  --pink: #f08cb0;
+  --yellow: #e8c552;
+  --purple: #b79cff;
 
-  --tile-l: 0.31;
-  --tile-c: 0.04;
-  --ink-l: 0.82;
+  --tile-l: 0.27;
+  --tile-c: 0.035;
+  --ink-l: 0.84;
 
-  --glass-bg: color-mix(in oklab, #181b1a 82%, transparent);
-  --glass-border: color-mix(in oklab, #edf0ee 10%, transparent);
+  --glass-bg: color-mix(in oklab, #141416 80%, transparent);
+  --glass-border: color-mix(in oklab, #f4f4f5 10%, transparent);
   --glass-highlight: rgba(255, 255, 255, 0.06);
-  --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 
-  --terracotta: #f0a07c;
-  --terracotta-soft: #3a261d;
-  --honey: #f0c46a;
-  --honey-soft: #362b17;
-  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 6px 20px rgba(0, 0, 0, 0.3);
+  --terracotta: #ff8a63;
+  --terracotta-soft: color-mix(in oklab, #ff8a63 14%, #141416);
+  --honey: #f5c160;
+  --honey-soft: color-mix(in oklab, #f5c160 13%, #141416);
+  --card-shadow: 0 0 0 0.5px var(--border), 0 10px 28px -14px rgba(0, 0, 0, 0.6);
+
+  --hero: #17171a;
+  --hero-ink: #f7f7f8;
 }
+.dark[data-accent="cobalt"] { --accent: #7b95ff; --accent-glow: #7b95ff; --accent-ink: #050a1f; }
+.dark[data-accent="forest"] { --accent: #4fd08f; --accent-glow: #4fd08f; --accent-ink: #03140b; }
+.dark[data-accent="graphite"] { --accent: #f4f4f5; --accent-glow: #a1a1aa; --accent-ink: #09090a; }
 
 @theme inline {
   --color-background: var(--background);
@@ -149,7 +166,7 @@
 
   /* SF on Apple devices (incl. SF Hebrew), Heebo elsewhere */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Hebrew", var(--font-heebo), system-ui, sans-serif;
-  --font-display: var(--font-rubik), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Hebrew", var(--font-heebo), system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Hebrew", var(--font-plex), var(--font-heebo), system-ui, sans-serif;
 
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 12px rgba(0, 0, 0, 0.04);
   --shadow-lift: 0 10px 40px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.06);
@@ -176,6 +193,10 @@
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.94); }
   to { opacity: 1; transform: scale(1); }
+}
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(-18%, 22%) scale(1.15); }
 }
 @keyframes aurora {
   0% { transform: translate(0, 0) rotate(0deg) scale(1); }
@@ -240,7 +261,6 @@ body {
 
   /* ---- Cozy card: borderless warm surface with a soft lift ------------------- */
   .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--card-shadow); }
-  .dark .card { border: 0.5px solid var(--border); }
   .footnote { font-size: 0.8125rem; letter-spacing: -0.005em; }
   .caption { font-size: 0.75rem; letter-spacing: 0; }
   .section-label { font-size: 0.8125rem; font-weight: 400; text-transform: none; color: var(--muted); padding-inline: 1rem; }
@@ -279,23 +299,43 @@ body {
   }
 
   /* ---- Dashboard ------------------------------------------------------------ */
-  /* The daily brief: a quiet lit surface — accent light from the top corner. */
-  .brief-surface {
+  /* The daily brief: a night-sky hero with a slow warm glow — the one dark,
+     high-contrast object on the screen, so the eye lands there first. */
+  .hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    color: var(--hero-ink);
     background:
-      radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--accent) 22%, transparent) 0%, transparent 55%),
-      radial-gradient(90% 80% at 0% 100%, color-mix(in oklab, var(--honey) 14%, transparent) 0%, transparent 60%),
-      var(--surface);
+      radial-gradient(130% 90% at 100% -10%, color-mix(in oklab, var(--accent-glow) 38%, transparent) 0%, transparent 52%),
+      radial-gradient(90% 70% at -10% 110%, color-mix(in oklab, #6b5cff 26%, transparent) 0%, transparent 58%),
+      linear-gradient(170deg, color-mix(in oklab, var(--hero) 88%, #fff) 0%, var(--hero) 46%);
     border-radius: 1.75rem;
-    box-shadow: var(--card-shadow), inset 0 1px 0 var(--glass-highlight);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 0 0 0.5px rgba(255, 255, 255, 0.06) inset, 0 24px 48px -24px rgba(16, 16, 20, 0.55);
   }
-  .dark .brief-surface { border: 0.5px solid color-mix(in oklab, var(--accent) 22%, var(--border)); }
-  .brief-row { background: color-mix(in oklab, var(--surface) 88%, transparent); border-radius: 1.125rem; box-shadow: 0 1px 2px rgba(60, 40, 20, 0.05); }
-  .dark .brief-row { background: color-mix(in oklab, #000 22%, transparent); }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: -40% -20% auto auto;
+    width: 70%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in oklab, var(--accent-glow) 45%, transparent), transparent 65%);
+    filter: blur(24px);
+    opacity: 0.55;
+    animation: drift 14s ease-in-out infinite alternate;
+    z-index: -1;
+  }
+  .hero-muted { color: color-mix(in oklab, var(--hero-ink) 62%, transparent); }
+  .hero-row { background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.09); border-radius: 1.125rem; }
+  .hero-chip { background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.1); }
 
-  /* Widgets: compact surfaces with a small header line. */
+  /* Widgets: white rooms with a hairline edge. */
   .widget { background: var(--surface); border-radius: 1.5rem; box-shadow: var(--card-shadow); overflow: hidden; }
-  .dark .widget { border: 0.5px solid var(--border); }
-  .eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; color: var(--muted); }
+  .eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.01em; color: var(--muted); }
+
+  /* Icon tile: neutral well, accent glyph. */
+  .icon-well { background: var(--surface-2); color: var(--primary); box-shadow: inset 0 0 0 0.5px var(--border); }
 
   /* Staggered entrance; each child sets --i. */
   .stagger > * { animation: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 55ms); }

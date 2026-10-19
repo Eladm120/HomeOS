@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUp, ChevronLeft, Clock, Loader2, Power, RotateCw } from "lucide-react";
+import { ArrowUp, ChevronLeft, Clock, Loader2, Power, RotateCw, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { AlertItem } from "@/lib/alerts";
 import { suggestProducts } from "@/lib/grocery";
@@ -70,22 +70,24 @@ export function WidgetShell({
 /** A widget that has nothing to show collapses into one of these small tiles. */
 export interface EmptyTileProps {
   key: string;
-  emoji: string;
-  hue: number;
+  icon: LucideIcon;
   title: string;
   text: string;
   href: string;
 }
 
-export function EmptyTile({ emoji, hue, title, text, href }: Omit<EmptyTileProps, "key">) {
+export function EmptyTile({ icon: Icon, title, text, href }: Omit<EmptyTileProps, "key">) {
   return (
-    <Link href={href} className="widget pressable flex items-center gap-3 p-3">
-      <span aria-hidden className="cat-tint grid size-10 shrink-0 place-items-center rounded-[14px] text-[20px]" style={{ "--h": hue } as React.CSSProperties}>
-        {emoji}
+    <Link href={href} className="widget pressable group flex flex-col gap-3 p-3.5">
+      <span aria-hidden className="icon-well grid size-10 place-items-center rounded-[14px]">
+        <Icon className="size-[19px]" strokeWidth={2.1} />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14px] leading-tight font-semibold">{title}</span>
-        <span className="mt-0.5 block truncate text-[12px] leading-tight text-primary">{text}</span>
+      <span className="min-w-0">
+        <span className="block truncate text-[15px] leading-tight font-semibold">{title}</span>
+        <span className="mt-1 flex items-center gap-0.5 truncate text-[13px] leading-tight text-muted">
+          {text}
+          <ChevronLeft className="size-3.5 shrink-0 text-primary" />
+        </span>
       </span>
     </Link>
   );
@@ -412,7 +414,7 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
 }
 
 export function Avatar({ name, index, className }: { name: string; index: number; className?: string }) {
-  const palette = ["bg-primary text-primary-foreground", "bg-terracotta text-white", "bg-honey text-white", "bg-sky text-white"];
+  const palette = ["bg-foreground text-background", "bg-primary text-primary-foreground", "bg-sky text-white", "bg-sage text-white"];
   return (
     <span title={name} className={cn("grid shrink-0 place-items-center rounded-full font-bold", palette[index % palette.length], className)}>
       {name.slice(0, 1) || "?"}

@@ -123,7 +123,7 @@ export function AppGlyph({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "relative grid shrink-0 place-items-center overflow-hidden rounded-[28%] bg-[linear-gradient(145deg,#6aa985_0%,#3b7657_55%,#2f6447_100%)] shadow-[0_8px_24px_rgba(59,118,87,0.3),inset_0_1px_0_rgba(255,255,255,0.35)]",
+        "relative grid shrink-0 place-items-center overflow-hidden rounded-[28%] bg-[linear-gradient(145deg,color-mix(in_oklab,var(--accent)_70%,#fff)_0%,var(--accent)_60%,color-mix(in_oklab,var(--accent)_80%,#000)_100%)] shadow-[0_6px_18px_-6px_var(--accent),inset_0_1px_0_rgba(255,255,255,0.35)]",
         className,
       )}
     >
