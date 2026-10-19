@@ -48,7 +48,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
       path = "/household";
       content = (
         <>
-          <PageHeader title="משק הבית" subtitle="הבית שלנו" />
+          <PageHeader title="משק הבית" subtitle="כל מה שקשור לבית, מסודר במקום אחד" />
           <HubView counts={{ inventory: 42, low: 3, choresToday: 2, choresTotal: 9, meals: 4, appliances: 6, plants: 3, bills: 2, documents: 11, devices: 5 }} alerts={6} />
         </>
       );
@@ -70,8 +70,20 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
       break;
     }
     case "shopping":
+    case "shopping-store":
       path = "/shopping";
-      content = <GroceryView {...groceryProps} />;
+      content = (
+        <GroceryView
+          {...groceryProps}
+          initialStore={screen === "shopping-store"}
+          suggestions={[
+            { key: "low:1", name: "ביצים", unit: "יח׳", inventory_item_id: null, category_id: categories[1]?.id ?? null, reason: "low" },
+            { key: "low:2", name: "קפה", unit: "חבילה", inventory_item_id: null, category_id: null, reason: "low" },
+            { key: "freq:1", name: "לחם", unit: "יח׳", inventory_item_id: null, category_id: null, reason: "frequent" },
+            { key: "freq:2", name: "בננות", unit: "ק״ג", inventory_item_id: null, category_id: categories[0]?.id ?? null, reason: "frequent" },
+          ]}
+        />
+      );
       break;
     case "inventory":
       path = "/inventory";
@@ -116,6 +128,7 @@ function dashboardFixture(screen: string, now: Date): React.ComponentProps<typeo
     preview: true,
     householdId: HID,
     householdName: "הבית של אלעד ונעה",
+    coverPath: null,
     greeting: greetingFor(now),
     userName: "אלעד",
     dateLine: `${formatLongDate(now)} · ${formatHebrewCalendarDate(now)}`,

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { publicEnv } from "@/lib/env";
+import { MEDIA_BUCKET, publicEnv } from "@/lib/env";
 import type { ActionResult } from "@/lib/types";
 import { flattenZodError, householdNameSchema, inviteSchema, nameSchema } from "@/lib/validation";
 import { ACTIVE_HOUSEHOLD_COOKIE, getUser } from "@/server/context";
@@ -96,6 +96,30 @@ export async function renameHousehold(input: { name: string }): Promise<ActionRe
     const { error } = await supabase.from("households").update({ name: parsed.data.name }).eq("id", ctx.household.id);
     if (error) return dbFail("household.rename", error);
     revalidatePath("/", "layout");
+    return ok(null);
+  });
+}
+
+/** The home's cover photo on the dashboard (owner only). Stored in households.settings.cover_path. */
+export async function setHouseholdCover(input: { path: string | null }): Promise<ActionResult<null>> {
+  const parsed = z.object({ path: z.string().max(300).nullable() }).safeParse(input);
+  if (!parsed.success) return fail("קלט לא תקין");
+  return withHousehold(async (ctx, supabase) => {
+    if (ctx.role !== "owner") return fail("רק בעלי משק הבית יכולים להחליף את תמונת הבית");
+    const path = parsed.data.path;
+    // Only an image this household uploaded into its own folder.
+    if (path && !new RegExp(`^${ctx.household.id}/household/[0-9a-f-]{36}\\.(webp|jpg)$`).test(path)) return fail("קלט לא תקין");
+    const settings = { ...(ctx.household.settings ?? {}) };
+    const previous = typeof settings.cover_path === "string" ? settings.cover_path : null;
+    if (path) settings.cover_path = path;
+    else delete settings.cover_path;
+    const { error } = await supabase.from("households").update({ settings }).eq("id", ctx.household.id);
+    if (error) return dbFail("household.cover", error);
+    if (previous && previous !== path) {
+      const old = previous.endsWith(".webp") ? [previous, previous.replace(/\.webp$/, "_thumb.webp")] : [previous];
+      await supabase.storage.from(MEDIA_BUCKET).remove(old);
+    }
+    revalidatePath("/");
     return ok(null);
   });
 }

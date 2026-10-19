@@ -76,7 +76,7 @@ export function ProductThumb({
     );
   }
   return (
-    <span aria-hidden className={cn(base, "cat-tint grid place-items-center text-[24px] leading-none")} style={{ "--h": style.hue } as React.CSSProperties}>
+    <span aria-hidden className={cn("cat-tint grid place-items-center text-[24px] leading-none", base)} style={{ "--h": style.hue } as React.CSSProperties}>
       {productEmoji(name, category)}
     </span>
   );

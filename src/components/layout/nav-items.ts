@@ -1,4 +1,4 @@
-import { ChefHat, House, LayoutGrid, ShoppingBasket, Sparkles, type LucideIcon } from "lucide-react";
+import { ChefHat, House, LayoutGrid, ShoppingCart, Sparkles, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   href: string;
@@ -10,7 +10,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "בית", icon: House },
-  { href: "/shopping", label: "קניות", icon: ShoppingBasket },
+  { href: "/shopping", label: "קניות", icon: ShoppingCart },
   {
     href: "/household",
     label: "משק הבית",

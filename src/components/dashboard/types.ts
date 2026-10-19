@@ -76,6 +76,8 @@ export interface SetupStep {
 export interface DashboardProps {
   householdId: string;
   householdName: string;
+  /** The home's cover photo (households.settings.cover_path). */
+  coverPath: string | null;
   greeting: string;
   userName: string;
   dateLine: string;

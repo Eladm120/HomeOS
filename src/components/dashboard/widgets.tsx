@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUp, ChevronLeft, Clock, Loader2, Power, RotateCw, type LucideIcon } from "lucide-react";
+import { AirVent, ArrowUp, BellRing, ChevronLeft, Clock, Flame, Hammer, HouseWifi, Lightbulb, Loader2, Plug, Power, RotateCw, ShoppingCart, SquareCheckBig, Thermometer, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { AlertItem } from "@/lib/alerts";
 import { suggestProducts } from "@/lib/grocery";
@@ -35,11 +35,16 @@ export function WidgetShell({
   href,
   hrefLabel = "הכל",
   aside,
+  icon: Icon,
+  hue = 155,
   children,
   className,
 }: {
   id?: string;
   title: string;
+  icon?: LucideIcon;
+  /** Module hue for the title chip. */
+  hue?: number;
   meta?: React.ReactNode;
   href?: string;
   hrefLabel?: string;
@@ -49,7 +54,12 @@ export function WidgetShell({
 }) {
   return (
     <section id={id} aria-label={title} className={cn("widget scroll-mt-6", className)}>
-      <header className="flex items-center gap-2 px-4 pt-3.5 pb-2">
+      <header className="flex items-center gap-2.5 px-4 pt-3.5 pb-2">
+        {Icon && (
+          <span aria-hidden className="mod-chip grid size-9 shrink-0 place-items-center rounded-xl" style={{ "--h": hue } as React.CSSProperties}>
+            <Icon className="size-[18px]" strokeWidth={2.1} />
+          </span>
+        )}
         <span className="min-w-0 flex-1">
           <h2 className="text-[17px] leading-tight font-semibold [font-family:var(--font-display)]">{title}</h2>
           {meta && <span className="footnote mt-0.5 block truncate text-muted">{meta}</span>}
@@ -170,7 +180,7 @@ export function GroceryWidget({
     : "מה שיורד מתחת למינימום במלאי נכנס לבד";
 
   return (
-    <WidgetShell id="grocery" title={left ? "רשימת הקניות" : "הרשימה ריקה"} meta={meta} href={left || grocery.inCart ? "/shopping" : undefined}>
+    <WidgetShell id="grocery" icon={ShoppingCart} hue={155} title={left ? "רשימת הקניות" : "הרשימה ריקה"} meta={meta} href={left || grocery.inCart ? "/shopping" : undefined}>
       {items.length > 0 && (
         <ul className="hairline-list-inset [--separator-inset:4rem]">
           {items.map((g) => {
@@ -342,6 +352,8 @@ export function TasksWidget({
     <WidgetShell
       id="tasks"
       title="משימות"
+      icon={SquareCheckBig}
+      hue={75}
       meta={todayOpen ? `${todayOpen} פתוחות להיום${now.some((t) => t.days < 0) ? " · יש באיחור" : ""}` : completed ? "כל משימות היום בוצעו" : "להיום ולמחר"}
       href="/chores"
       aside={
@@ -430,7 +442,7 @@ export function MealsWidget({ meals, ready }: { meals: DashboardMeal[]; ready: R
     ? meals.map((m) => ({ key: m.id, href: m.href, title: m.title, over: m.slot, r: m }))
     : ready.map((r) => ({ key: r.id, href: `/recipes/${r.id}`, title: r.title, over: r.minutes ? `${r.minutes} דק׳` : "יש הכל בבית", r }));
   return (
-    <WidgetShell id="meals" title={planned ? "מה אוכלים היום" : "אפשר לבשל עכשיו"} meta={planned ? undefined : "מתכונים שכל המצרכים שלהם במלאי"} href={planned ? "/meals" : "/recipes"} hrefLabel={planned ? "לתכנון" : "מתכונים"}>
+    <WidgetShell id="meals" icon={UtensilsCrossed} hue={40} title={planned ? "מה אוכלים היום" : "אפשר לבשל עכשיו"} meta={planned ? undefined : "מתכונים שכל המצרכים שלהם במלאי"} href={planned ? "/meals" : "/recipes"} hrefLabel={planned ? "לתכנון" : "מתכונים"}>
       <div className="scrollbar-none flex snap-x gap-2.5 overflow-x-auto px-4 pb-4">
         {cards.map((c) => (
           <Link key={c.key} href={c.href} className="pressable relative h-[132px] w-[150px] shrink-0 snap-start overflow-hidden rounded-[1.125rem]">
@@ -459,7 +471,7 @@ export function MealsWidget({ meals, ready }: { meals: DashboardMeal[]; ready: R
 
 export function AttentionWidget({ alerts, total, preview }: { alerts: AlertItem[]; total: number; preview?: boolean }) {
   return (
-    <WidgetShell id="attention" title="דורש טיפול" meta="מלאי, תוקף, תשלומים ואחריות" href="/notifications" hrefLabel={total > alerts.length ? `הכל · ${total}` : "הכל"}>
+    <WidgetShell id="attention" icon={BellRing} hue={15} title="דורש טיפול" meta="מלאי, תוקף, תשלומים ואחריות" href="/notifications" hrefLabel={total > alerts.length ? `הכל · ${total}` : "הכל"}>
       <AlertList alerts={alerts} preview={preview} className="rounded-none shadow-none [border:0]" />
     </WidgetShell>
   );
@@ -467,8 +479,7 @@ export function AttentionWidget({ alerts, total, preview }: { alerts: AlertItem[
 
 // ---- Smart home ----------------------------------------------------------------
 
-const DEVICE_EMOJI: Record<string, string> = { climate: "❄️", water_heater: "♨️", switch: "🔌", light: "💡", sensor: "🌡️", other: "🏠" };
-const DEVICE_GLOW: Record<string, string> = { climate: "bg-sky-soft", water_heater: "bg-terracotta-soft", switch: "bg-sage-soft", light: "bg-honey-soft", other: "bg-sage-soft" };
+const DEVICE_ICON: Record<string, LucideIcon> = { climate: AirVent, water_heater: Flame, switch: Plug, light: Lightbulb, sensor: Thermometer, other: HouseWifi };
 const HVAC: Record<string, string> = { cool: "קירור", heat: "חימום", auto: "אוטו", dry: "ייבוש", fan_only: "מאוורר", heat_cool: "חימום/קירור" };
 
 const deviceOn = (d: DashDevice) => d.state != null && d.state !== "off" && d.state !== "unavailable" && d.kind !== "sensor";
@@ -482,6 +493,11 @@ function deviceLine(d: DashDevice): string {
     return d.state === "off" ? ["כבוי", cur].filter(Boolean).join(" · ") : [HVAC[d.state ?? ""] ?? "פועל", typeof a.temperature === "number" ? `${a.temperature}°` : null].filter(Boolean).join(" · ");
   }
   return deviceOn(d) ? "דולק" : "כבוי";
+}
+
+function DeviceIcon({ kind }: { kind: string }) {
+  const Icon = DEVICE_ICON[kind] ?? HouseWifi;
+  return <Icon className="size-[19px]" strokeWidth={2} />;
 }
 
 export function SmartHomeWidget({ devices, preview }: { devices: DashDevice[]; preview?: boolean }) {
@@ -504,16 +520,16 @@ export function SmartHomeWidget({ devices, preview }: { devices: DashDevice[]; p
 
   const on = devices.filter(deviceOn).length;
   return (
-    <WidgetShell id="smarthome" title="בית חכם" meta={on ? `${on} דולקים עכשיו` : "הכל כבוי"} href="/smart-home">
+    <WidgetShell id="smarthome" icon={HouseWifi} hue={280} title="בית חכם" meta={on ? `${on} דולקים עכשיו` : "הכל כבוי"} href="/smart-home">
       <div className="grid grid-cols-2 gap-2 px-3 pb-3 sm:grid-cols-3">
         {devices.map((d) => {
           const isOn = deviceOn(d);
           const canToggle = !!d.capabilities.power && d.online && d.state !== "unavailable";
           return (
-            <div key={d.id} className={cn("flex min-h-[92px] flex-col justify-between rounded-[1.125rem] p-3 transition-colors", isOn ? (DEVICE_GLOW[d.kind] ?? "bg-sage-soft") : "bg-surface-2")}>
+            <div key={d.id} className={cn("flex min-h-[104px] flex-col justify-between rounded-[1.25rem] p-3 transition-all duration-300", isOn ? "lit" : "bg-surface-2")}>
               <div className="flex items-start justify-between gap-2">
-                <span aria-hidden className={cn("text-[22px] leading-none", !isOn && "opacity-60 grayscale")}>
-                  {DEVICE_EMOJI[d.kind] ?? "🏠"}
+                <span aria-hidden className={cn("grid size-9 place-items-center rounded-xl", isOn ? "bg-black/10" : "bg-fill text-foreground/70")}>
+                  <DeviceIcon kind={d.kind} />
                 </span>
                 {canToggle && (
                   <button
@@ -523,7 +539,7 @@ export function SmartHomeWidget({ devices, preview }: { devices: DashDevice[]; p
                     aria-label={`${d.name} ${isOn ? "כיבוי" : "הדלקה"}`}
                     disabled={busy === d.id}
                     onClick={() => run(d, { type: "power", on: !isOn })}
-                    className={cn("pressable grid size-8 place-items-center rounded-full", isOn ? "bg-foreground text-background" : "bg-fill text-foreground/70")}
+                    className={cn("pressable grid size-8 place-items-center rounded-full", isOn ? "bg-[var(--accent-ink)] text-[var(--accent)]" : "bg-fill text-foreground/70")}
                   >
                     {busy === d.id ? <Loader2 className="size-4 animate-spin" /> : <Power className="size-4" strokeWidth={2.5} />}
                   </button>
@@ -531,7 +547,7 @@ export function SmartHomeWidget({ devices, preview }: { devices: DashDevice[]; p
               </div>
               <Link href="/smart-home" className="min-w-0">
                 <span className="block truncate text-[14px] leading-tight font-semibold">{d.name}</span>
-                <span className="block truncate text-[12px] text-foreground/65">{deviceLine(d)}</span>
+                <span className={cn("block truncate text-[12px]", isOn ? "opacity-75" : "text-muted")}>{deviceLine(d)}</span>
               </Link>
             </div>
           );
@@ -556,7 +572,7 @@ export function SmartHomeWidget({ devices, preview }: { devices: DashDevice[]; p
 
 export function ProjectsWidget({ projects, purchases }: { projects: DashProject[]; purchases: DashPurchase[] }) {
   return (
-    <WidgetShell id="projects" title="פרויקטים וקניות לבית" href={projects.length ? "/projects" : "/planner"}>
+    <WidgetShell id="projects" icon={Hammer} hue={230} title="פרויקטים וקניות לבית" href={projects.length ? "/projects" : "/planner"}>
       <ul className="hairline-list-inset pb-2 [--separator-inset:3.75rem]">
         {projects.map((p) => (
           <li key={p.id}>

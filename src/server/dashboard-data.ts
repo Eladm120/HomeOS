@@ -102,7 +102,9 @@ export async function loadDashboardData(ctx: HouseholdContext): Promise<Dashboar
     return { id: g.id, name: g.name, quantity: Number(g.quantity), unit: g.unit, emoji: cat ? productEmoji(g.name, cat) : categoryStyle(null).emoji, image_path: g.image_path, urgent: g.priority === "high" };
   });
 
+  const coverPath = typeof ctx.household.settings?.cover_path === "string" ? ctx.household.settings.cover_path : null;
   const signedUrls = await signPaths(supabase, [
+    coverPath,
     ...meals.map((m) => m.image_path),
     ...items.map((i) => i.image_path),
     ...recipesBlock.ready.map((r) => r.image_path),
@@ -114,6 +116,7 @@ export async function loadDashboardData(ctx: HouseholdContext): Promise<Dashboar
   return {
     householdId: hid,
     householdName: ctx.household.name,
+    coverPath,
     greeting: greetingFor(now, tz),
     userName: me,
     dateLine: `${formatLongDate(now, tz)} · ${formatHebrewCalendarDate(now, tz)}`,

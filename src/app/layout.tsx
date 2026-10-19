@@ -9,7 +9,7 @@ const heebo = Heebo({ subsets: ["hebrew", "latin"], variable: "--font-heebo", di
 const plex = IBM_Plex_Sans_Hebrew({ subsets: ["hebrew", "latin"], weight: ["400", "500", "600", "700"], variable: "--font-plex", display: "swap" });
 
 /** Apply the member's accent before first paint (no flash of the default colour). */
-const ACCENT_SCRIPT = `try{var a=localStorage.getItem("homeos:accent");if(a&&/^(peach|mint|sky)$/.test(a))document.documentElement.dataset.accent=a}catch(e){}`;
+const ACCENT_SCRIPT = `try{var a=localStorage.getItem("homeos:accent");if(a&&/^(mauve|gold|peach)$/.test(a))document.documentElement.dataset.accent=a}catch(e){}`;
 
 export const metadata: Metadata = {
   title: { default: "HomeOS", template: "%s · HomeOS" },
@@ -28,8 +28,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f5fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#f7f5fb" },
+    { media: "(prefers-color-scheme: light)", color: "#121010" },
+    { media: "(prefers-color-scheme: dark)", color: "#121010" },
   ],
 };
 

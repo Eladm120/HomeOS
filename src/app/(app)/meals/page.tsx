@@ -5,6 +5,7 @@ import { expiryState } from "@/lib/inventory-logic";
 import { addDays, todayInZone } from "@/lib/format";
 import type { MealPlanEntry, Recipe, RecipeIngredient } from "@/lib/types";
 import { requireHousehold } from "@/server/context";
+import { signPaths } from "@/server/media";
 import { checkRecipe, loadMappings, loadStock, readiness } from "@/server/recipes-data";
 
 export const metadata = { title: "תכנון ארוחות" };
@@ -61,18 +62,36 @@ export default async function MealsPage({ searchParams }: { searchParams: Promis
     const ings = ingByRecipe.get(r.id) ?? [];
     const uses = expiringNames.find((n) => ings.some((i) => nameScore(i.name, n) > 0));
     const ready = readiness(checkRecipe(ings, stock, mappings));
-    if (uses) usesExpiring.push({ recipeId: r.id, title: r.title, reason: `משתמש ב${uses} שתוקפו קרוב${ready.missing ? ` · חסרים ${ready.missing}` : ""}` });
-    else if (ready.total && ready.missing === 0 && ready.unclear === 0) readyNow.push({ recipeId: r.id, title: r.title, reason: "יש בבית את כל המצרכים" });
+    const img = { image_path: r.image_path, image_url: r.image_url };
+    if (uses) usesExpiring.push({ ...img, recipeId: r.id, title: r.title, reason: `משתמש ב${uses} שתוקפו קרוב${ready.missing ? ` · חסרים ${ready.missing}` : ""}` });
+    else if (ready.total && ready.missing === 0 && ready.unclear === 0) readyNow.push({ ...img, recipeId: r.id, title: r.title, reason: "יש בבית את כל המצרכים" });
   }
+
+  const planEntries = (entries ?? []) as MealPlanEntry[];
+  const suggestions = [...usesExpiring, ...readyNow].slice(0, 6);
+  const signedUrls = await signPaths(supabase, [
+    ...planEntries.map((e) => (e.recipe_id ? byId.get(e.recipe_id)?.image_path : null)),
+    ...suggestions.map((sg) => sg.image_path),
+  ]);
 
   return (
     <MealsView
       householdId={hid}
       weekStart={start}
-      entries={((entries ?? []) as MealPlanEntry[]).map((e) => ({ ...e, recipe_title: e.recipe_id ? (byId.get(e.recipe_id)?.title ?? null) : null }))}
+      entries={planEntries.map((e) => {
+        const r = e.recipe_id ? byId.get(e.recipe_id) : undefined;
+        return {
+          ...e,
+          recipe_title: r?.title ?? null,
+          recipe_image_path: r?.image_path ?? null,
+          recipe_image_url: r?.image_url ?? null,
+          recipe_minutes: r ? (r.prep_minutes ?? 0) + (r.cook_minutes ?? 0) || null : null,
+        };
+      })}
       recipes={recipeList.map((r) => ({ id: r.id, title: r.title, servings: r.servings }))}
       shortfalls={shortfalls}
-      suggestions={[...usesExpiring, ...readyNow].slice(0, 4)}
+      suggestions={suggestions}
+      signedUrls={signedUrls}
     />
   );
 }

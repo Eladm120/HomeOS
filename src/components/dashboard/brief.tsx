@@ -54,9 +54,11 @@ export function BriefCard({ brief, chips, more = 0, greeting, preview }: { brief
     <section aria-label="התדריך של היום" className="hero p-5">
       <div className="flex items-center gap-2">
         <span className="hero-chip flex h-7 items-center gap-1.5 rounded-full ps-2 pe-2.5 text-[12px] font-semibold">
-          <Period className="size-3.5 text-primary" strokeWidth={2.5} />
-          התדריך של היום
+          <Sparkles className="size-3.5 text-primary" strokeWidth={2.5} />
+          מה צריך תשומת לב היום
         </span>
+        <span className="flex-1" />
+        <Period aria-hidden className="hero-muted size-5" strokeWidth={2} />
       </div>
 
       <p className="mt-3 text-[24px] leading-[1.2] font-semibold tracking-[-0.02em] text-balance [font-family:var(--font-display)]">
@@ -102,9 +104,16 @@ export function BriefCard({ brief, chips, more = 0, greeting, preview }: { brief
 
       {chips.length > 0 && (
         <div className="scrollbar-none -mx-5 mt-4 flex gap-1.5 overflow-x-auto px-5">
-          {chips.map((c) => (
-            <Link key={c.key} href={c.href} className="hero-chip pressable flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium">
-              <c.icon className="size-3.5 opacity-70" />
+          {chips.map((c, i) => (
+            <Link
+              key={c.key}
+              href={c.href}
+              className={cn(
+                "pressable flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold",
+                i === 0 ? "bg-primary text-primary-foreground" : "hero-chip",
+              )}
+            >
+              <c.icon className="size-4" />
               {c.text}
             </Link>
           ))}

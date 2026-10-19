@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChefHat, ChevronLeft, Clock, Heart, Plus, Search } from "lucide-react";
 import type { Recipe } from "@/lib/types";
@@ -81,6 +81,11 @@ export function RecipesView({ recipes, signedUrls, week }: { recipes: RecipeCard
   useMemo(() => primeSignedUrls(signedUrls), [signedUrls]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  // Deep links such as /recipes?filter=favorites (from the meal planner).
+  useEffect(() => {
+    const f = new URLSearchParams(window.location.search).get("filter");
+    if (f === "favorites" || f === "ready") setFilter(f);
+  }, []);
 
   const categories = useMemo(() => [...new Set(recipes.map((r) => r.category).filter((c): c is string => !!c))], [recipes]);
   const ready = recipes.filter(isReady);

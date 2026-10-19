@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { Search } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { HubView } from "@/components/household/hub-view";
 import { requireHousehold } from "@/server/context";
@@ -44,12 +42,7 @@ export default async function HouseholdHubPage() {
     <>
       <PageHeader
         title="משק הבית"
-        subtitle={ctx.household.name}
-        actions={
-          <Link href="/search" className="pressable grid size-10 place-items-center rounded-full bg-surface shadow-[var(--card-shadow)]" aria-label="חיפוש">
-            <Search className="size-[19px]" />
-          </Link>
-        }
+        subtitle="כל מה שקשור לבית, מסודר במקום אחד"
       />
       <HubView
         counts={{ inventory: items.length, low, choresToday, choresTotal, meals, appliances, plants, bills, documents, devices }}

@@ -1,7 +1,12 @@
-import { redirect } from "next/navigation";
+import { GroceryView } from "@/components/grocery/grocery-view";
+import { requireHousehold } from "@/server/context";
+import { loadGroceryData } from "@/server/grocery-data";
 
-// Shopping Mode was merged into the shopping list itself; keep old links and
-// home-screen shortcuts working.
-export default function ShoppingModePage() {
-  redirect("/shopping");
+export const metadata = { title: "מצב סופר" };
+
+/** The shopping list, opened straight into full-screen supermarket mode. */
+export default async function ShoppingModePage() {
+  const ctx = await requireHousehold();
+  const data = await loadGroceryData(ctx);
+  return <GroceryView {...data} initialStore />;
 }

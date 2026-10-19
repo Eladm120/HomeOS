@@ -88,3 +88,55 @@ export function suggestProducts<T extends { name: string }>(query: string, candi
     .slice(0, limit)
     .map((s) => s.item);
 }
+
+export interface SmartSuggestion {
+  key: string;
+  name: string;
+  unit: string;
+  inventory_item_id: string | null;
+  category_id: string | null;
+  reason: "low" | "frequent";
+}
+
+/**
+ * One-tap additions above the list: what is probably running out (stock at or
+ * under its minimum) first, then what the home buys often (≥2 past trips).
+ * Anything already on the active list is skipped, by link or by name.
+ */
+export function smartSuggestions(input: {
+  active: Pick<ShoppingListItem, "name" | "inventory_item_id">[];
+  inventory: { id: string; name: string; unit: string; quantity: number; min_threshold: number | null; category_id?: string | null }[];
+  history: Pick<ShoppingListItem, "name" | "unit" | "inventory_item_id" | "category_id">[];
+  limit?: number;
+}): SmartSuggestion[] {
+  const onList = new Set(input.active.map((i) => normalizeProductName(i.name)));
+  const linked = new Set(input.active.map((i) => i.inventory_item_id).filter(Boolean));
+  const out: SmartSuggestion[] = [];
+  const taken = new Set<string>();
+  const push = (s: SmartSuggestion) => {
+    const n = normalizeProductName(s.name);
+    if (!n || onList.has(n) || taken.has(n) || (s.inventory_item_id && linked.has(s.inventory_item_id))) return;
+    taken.add(n);
+    out.push(s);
+  };
+
+  for (const i of input.inventory) {
+    const q = Number(i.quantity);
+    const low = q <= 0 || (i.min_threshold != null && q <= Number(i.min_threshold));
+    if (low) push({ key: `low:${i.id}`, name: i.name, unit: i.unit, inventory_item_id: i.id, category_id: i.category_id ?? null, reason: "low" });
+  }
+
+  const counts = new Map<string, { n: number; item: (typeof input.history)[number] }>();
+  for (const h of input.history) {
+    const n = normalizeProductName(h.name);
+    if (!n) continue;
+    const cur = counts.get(n);
+    counts.set(n, { n: (cur?.n ?? 0) + 1, item: cur?.item ?? h });
+  }
+  [...counts.values()]
+    .filter((c) => c.n >= 2)
+    .sort((a, b) => b.n - a.n)
+    .forEach((c) => push({ key: `freq:${normalizeProductName(c.item.name)}`, name: c.item.name, unit: c.item.unit, inventory_item_id: c.item.inventory_item_id, category_id: c.item.category_id, reason: "frequent" }));
+
+  return out.slice(0, input.limit ?? 8);
+}

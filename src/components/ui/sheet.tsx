@@ -26,11 +26,11 @@ export function Sheet({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30 data-[state=open]:animate-[fade-up_0.3s_ease-out]" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30 dark:bg-black/60 data-[state=open]:animate-[fade-up_0.3s_ease-out]" />
         <Dialog.Content
           dir="rtl"
           className={cn(
-            "fixed inset-x-0 bottom-0 z-50 flex max-h-[94dvh] flex-col rounded-t-[2.25rem] bg-background shadow-lift outline-none",
+            "fixed inset-x-0 bottom-0 z-50 flex max-h-[94dvh] flex-col rounded-t-[2.25rem] bg-background shadow-lift dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] outline-none",
             "data-[state=open]:animate-sheet-up",
             "sm:inset-auto sm:start-1/2 sm:top-1/2 sm:max-h-[86dvh] sm:w-[min(540px,calc(100vw-2rem))] sm:translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[2rem] sm:data-[state=open]:animate-scale-in",
             className,

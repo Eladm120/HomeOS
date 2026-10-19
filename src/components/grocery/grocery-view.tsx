@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, Camera, CloudOff, ListTodo, PackageCheck, ShoppingCart } from "lucide-react";
+import { ArrowUp, Camera, CloudOff, ListTodo, PackageCheck, Plus, ShoppingCart, Sparkles, Store } from "lucide-react";
 import { toast } from "sonner";
 import { addShoppingItem, deleteShoppingItem, restoreShoppingItem } from "@/server/actions/grocery";
 import { useGroceryList, type SyncState } from "@/hooks/use-grocery-list";
 import { useOpenFromQuery } from "@/hooks/use-open-from-query";
-import { groupByCategory, splitByStatus, suggestProducts } from "@/lib/grocery";
-import { categoryStyle, guessCategoryId } from "@/lib/category-style";
+import { groupByCategory, splitByStatus, suggestProducts, type SmartSuggestion } from "@/lib/grocery";
+import { categoryStyle, guessCategoryId, productEmoji } from "@/lib/category-style";
 import { parseBulkLine } from "@/lib/validation";
 import type { ProductCategory, ShoppingListItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ import { GroceryItemRow } from "./item-row";
 import { GroceryItemSheet } from "./item-sheet";
 import { FinishTripSheet, type InventoryOption } from "./finish-trip-sheet";
 import { Highlight } from "@/components/ui/product-combobox";
+import { StoreMode } from "./store-mode";
 
 export interface GroceryViewProps {
   householdId: string;
@@ -29,6 +30,10 @@ export interface GroceryViewProps {
   signedUrls: Record<string, string>;
   inventory: InventoryOption[];
   renderedAt: number;
+  /** One-tap additions: running out, bought often. */
+  suggestions?: SmartSuggestion[];
+  /** Open straight into the full-screen supermarket mode (/shopping/mode). */
+  initialStore?: boolean;
   preview?: boolean;
 }
 
@@ -72,6 +77,8 @@ export function GroceryView(props: GroceryViewProps) {
   const [tab, setTab] = useState<"buy" | "cart">("buy");
   const [finishOpen, setFinishOpen] = useState(false);
   const [phase, setPhase] = useState<Record<string, Phase>>({});
+  const [store, setStore] = useState(!!props.initialStore);
+  const [usedSuggestions, setUsedSuggestions] = useState<Set<string>>(new Set());
   const itemsRef = useRef(items);
   useEffect(() => {
     itemsRef.current = items;
@@ -139,25 +146,51 @@ export function GroceryView(props: GroceryViewProps) {
     await add(s.name, parsed.unit === "יח׳" ? s.unit : parsed.unit, s.id);
   }
 
-  async function add(name: string, unit: string, inventoryId: string | null) {
-    if (!parsed || adding) return;
+  /** From the draft by default; `opts.quantity` marks a one-tap add that leaves the draft alone. */
+  async function add(name: string, unit: string, inventoryId: string | null, opts: { quantity?: number; categoryId?: string | null } = {}) {
+    const fromDraft = opts.quantity === undefined;
+    const quantity = opts.quantity ?? parsed?.quantity;
+    if (!quantity || adding) return false;
     setAdding(true);
     const res = await addShoppingItem({
       name,
-      quantity: parsed.quantity,
+      quantity,
       unit,
-      category_id: guessCategoryId(name, props.categories),
+      category_id: opts.categoryId ?? guessCategoryId(name, props.categories),
       inventory_item_id: inventoryId,
       save_to_catalog: false,
     });
     setAdding(false);
-    if (!res.ok) return void toast.error(res.error);
+    if (!res.ok) {
+      toast.error(res.error);
+      return false;
+    }
     upsertLocal(res.data.item);
-    setDraft("");
+    if (fromDraft) setDraft("");
     const cat = res.data.item.category_id ? catById.get(res.data.item.category_id) : null;
     if (res.data.merged) toast.success(`${name} כבר ברשימה, עדכנתי את הכמות`);
     else if (cat) toast(`${name} נוסף ל${cat.name}`);
+    return true;
   }
+
+  async function addSmart(sg: SmartSuggestion) {
+    setUsedSuggestions((u) => new Set(u).add(sg.key));
+    if (props.preview) return void toast.success(`${sg.name} נוסף לרשימה`);
+    const ok = await add(sg.name, sg.unit, sg.inventory_item_id, { quantity: 1, categoryId: sg.category_id });
+    if (!ok)
+      setUsedSuggestions((u) => {
+        const n = new Set(u);
+        n.delete(sg.key);
+        return n;
+      });
+  }
+  function closeStore() {
+    setStore(false);
+    // Reached via /shopping/mode: land back on the list's own address.
+    if (window.location.pathname.startsWith("/shopping/mode")) window.history.replaceState(null, "", "/shopping");
+  }
+
+  const smart = (props.suggestions ?? []).filter((sg) => !usedSuggestions.has(sg.key));
 
   async function remove(item: ShoppingListItem) {
     removeLocal(item.id);
@@ -181,7 +214,17 @@ export function GroceryView(props: GroceryViewProps) {
 
   return (
     <>
-      <PageHeader title="קניות" subtitle={<SyncBadge sync={sync} pendingOps={pendingOps} />} />
+      <PageHeader
+        title="קניות"
+        subtitle={<SyncBadge sync={sync} pendingOps={pendingOps} />}
+        actions={
+          pending.length + done.length > 0 && (
+            <button type="button" onClick={() => setStore(true)} className="pressable flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[15px] font-semibold text-primary-foreground">
+              <Store className="size-[18px]" /> מצב סופר
+            </button>
+          )
+        }
+      />
 
       {/* Two clear places: what's left to buy, and what's already in the cart */}
       <div className="sticky top-[calc(env(safe-area-inset-top)+56px)] z-20 -mx-4 mb-4 px-4 pb-1 lg:top-4">
@@ -227,6 +270,40 @@ export function GroceryView(props: GroceryViewProps) {
         )}
       </div>
 
+      {tab === "buy" && smart.length > 0 && (
+        <section aria-label="הצעות חכמות" className="mb-5">
+          <h2 className="mb-2 flex items-center gap-1.5 px-1 text-[14px] font-semibold text-primary">
+            <Sparkles className="size-4" /> הצעות חכמות
+          </h2>
+          <div className="scrollbar-none -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
+            {smart.map((sg) => (
+              <button
+                key={sg.key}
+                type="button"
+                onClick={() => addSmart(sg)}
+                disabled={adding}
+                className="card pressable flex w-[150px] shrink-0 snap-start flex-col gap-2 p-3 text-start"
+              >
+                <span className="flex items-start justify-between">
+                  <span aria-hidden className="cat-tint grid size-11 place-items-center rounded-[14px] text-[24px]" style={{ "--h": categoryStyle(sg.category_id ? (catById.get(sg.category_id) ?? null) : null).hue } as React.CSSProperties}>
+                    {productEmoji(sg.name, sg.category_id ? catById.get(sg.category_id) : null)}
+                  </span>
+                  <span className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground">
+                    <Plus className="size-4" strokeWidth={2.75} />
+                  </span>
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-[15px] font-semibold">{sg.name}</span>
+                  <span className={cn("block text-[12px] font-medium", sg.reason === "low" ? "text-terracotta" : "text-muted")}>
+                    {sg.reason === "low" ? "כנראה נגמר" : "נקנה לעיתים קרובות"}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {tab === "buy" ? (
         total === 0 ? (
           <EmptyState icon={<ShoppingCart />} title="הרשימה ריקה" description="כתבו למטה מה צריך, למשל ״2 חלב״. מוצרים שיורדים מתחת למינימום במלאי נכנסים לכאן לבד." />
@@ -246,12 +323,14 @@ export function GroceryView(props: GroceryViewProps) {
               const style = categoryStyle(category);
               return (
                 <section key={g.id ?? "none"} aria-label={g.name}>
-                  <h2 className="mb-2 flex items-center gap-2 px-1">
-                    <span aria-hidden className="text-[18px] leading-none">
+                  <h2 className="mb-2 flex items-center gap-2.5 px-1">
+                    <span aria-hidden className="cat-tint grid size-8 place-items-center rounded-[10px] text-[17px] leading-none" style={{ "--h": style.hue } as React.CSSProperties}>
                       {style.emoji}
                     </span>
-                    <span className="text-[15px] font-semibold text-foreground/80">{g.name}</span>
-                    <span className="num text-[13px] text-muted">{g.items.length}</span>
+                    <span className="text-[16px] font-semibold">{g.name}</span>
+                    <span className="num cat-ink cat-tint grid h-6 min-w-6 place-items-center rounded-full px-2 text-[12px] font-bold" style={{ "--h": style.hue } as React.CSSProperties}>
+                      {g.items.length}
+                    </span>
                   </h2>
                   <div className="card overflow-hidden [&>*+*]:border-t [&>*+*]:border-border">
                     {g.items.map((it) => {
@@ -402,7 +481,21 @@ export function GroceryView(props: GroceryViewProps) {
         onSaved={upsertLocal}
         onDeleted={removeLocal}
       />
-      <FinishTripSheet open={finishOpen} onOpenChange={setFinishOpen} purchased={done} inventory={props.inventory} onDone={() => setTab("buy")} />
+      {store && (
+        <StoreMode
+          pending={pending}
+          done={done}
+          categories={props.categories}
+          onToggle={(it) => setStatus(it, it.status === "pending" ? "purchased" : "pending")}
+          onFinish={() => setFinishOpen(true)}
+          onClose={closeStore}
+        />
+      )}
+      <FinishTripSheet open={finishOpen} onOpenChange={setFinishOpen} purchased={done} inventory={props.inventory} onDone={() => {
+          setTab("buy");
+          closeStore();
+        }}
+      />
     </>
   );
 }

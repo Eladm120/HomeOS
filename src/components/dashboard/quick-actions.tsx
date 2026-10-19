@@ -2,45 +2,45 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Camera, ChefHat, ChevronLeft, ListPlus, ShoppingBasket } from "lucide-react";
+import { BookmarkPlus, ChevronLeft, ListPlus, ScanLine, ShoppingCart } from "lucide-react";
 import type { ProductCategory } from "@/lib/types";
 import { Sheet } from "@/components/ui/sheet";
 import { QuickAddRow } from "./widgets";
 
-/** Four everyday starts, one row, all thumb-reachable. */
+/** Four everyday starts, one row, all thumb-reachable — each wears its module's colour. */
 export function QuickActions({ categories, inventory, preview }: { categories: ProductCategory[]; inventory: { id: string; name: string; unit: string }[]; preview?: boolean }) {
   const [add, setAdd] = useState(false);
-  const [capture, setCapture] = useState(false);
 
-  const btn = "pressable flex flex-col items-center gap-1.5 rounded-2xl py-1 text-center";
-  // Each action wears its own soft colour (tint + same-hue ink) — friendly, never loud.
-  const icon = "grid size-[58px] place-items-center rounded-[20px] shadow-[inset_0_0_0_0.5px_var(--border)] transition-transform";
+  const tile = "mod-tile pressable flex flex-col items-center gap-2 px-1 pt-3 pb-2.5 text-center";
+  const chip = "mod-chip grid size-11 place-items-center rounded-[15px]";
+  const label = "text-[12.5px] leading-tight font-semibold";
+  const hue = (h: number) => ({ "--h": h }) as React.CSSProperties;
   return (
     <>
-      <nav aria-label="פעולות מהירות" className="grid grid-cols-4 gap-1">
-        <button type="button" className={btn} onClick={() => setAdd(true)}>
-          <span className={`${icon} bg-primary-soft text-primary`}>
-            <ShoppingBasket className="size-6" strokeWidth={2.1} />
+      <nav aria-label="פעולות מהירות" className="grid grid-cols-4 gap-2">
+        <button type="button" className={tile} style={hue(155)} onClick={() => setAdd(true)}>
+          <span className={chip}>
+            <ShoppingCart className="size-[21px]" strokeWidth={2} />
           </span>
-          <span className="text-[12px] leading-tight font-medium text-foreground/80">מוצר לסופר</span>
+          <span className={label}>הוספת פריט</span>
         </button>
-        <button type="button" className={btn} onClick={() => setCapture(true)}>
-          <span className={`${icon} bg-terracotta-soft text-terracotta`}>
-            <Camera className="size-6" strokeWidth={2.1} />
+        <Link href="/receipts" className={tile} style={hue(280)}>
+          <span className={chip}>
+            <ScanLine className="size-[21px]" strokeWidth={2} />
           </span>
-          <span className="text-[12px] leading-tight font-medium text-foreground/80">צילום</span>
-        </button>
-        <Link href="/recipes/new" className={btn}>
-          <span className={`${icon} bg-honey-soft text-honey`}>
-            <ChefHat className="size-6" strokeWidth={2.1} />
-          </span>
-          <span className="text-[12px] leading-tight font-medium text-foreground/80">מתכון</span>
+          <span className={label}>סריקת קבלה</span>
         </Link>
-        <Link href="/chores?new=1" className={btn}>
-          <span className={`${icon} bg-sage-soft text-sage`}>
-            <ListPlus className="size-6" strokeWidth={2.1} />
+        <Link href="/recipes/new" className={tile} style={hue(40)}>
+          <span className={chip}>
+            <BookmarkPlus className="size-[21px]" strokeWidth={2} />
           </span>
-          <span className="text-[12px] leading-tight font-medium text-foreground/80">משימה</span>
+          <span className={label}>שמירת מתכון</span>
+        </Link>
+        <Link href="/chores?new=1" className={tile} style={hue(75)}>
+          <span className={chip}>
+            <ListPlus className="size-[21px]" strokeWidth={2} />
+          </span>
+          <span className={label}>הוספת משימה</span>
         </Link>
       </nav>
 
@@ -51,30 +51,6 @@ export function QuickActions({ categories, inventory, preview }: { categories: P
         <Link href="/shopping" className="mt-1 flex items-center gap-1 text-[14px] font-medium text-primary">
           לרשימה המלאה <ChevronLeft className="size-4" />
         </Link>
-      </Sheet>
-
-      <Sheet open={capture} onOpenChange={setCapture} title="מה מצלמים?">
-        <ul className="space-y-2">
-          {[
-            { href: "/receipts", emoji: "🧾", title: "קבלה מהסופר", text: "המוצרים נכנסים למלאי אחרי בדיקה" },
-            { href: "/scan", emoji: "📦", title: "מוצר או ברקוד", text: "מוסיפים למלאי בלי להקליד" },
-            { href: "/recipes/new", emoji: "🍳", title: "מתכון", text: "מספר, ממחברת או צילום מסך" },
-            { href: "/bills", emoji: "💡", title: "חשבון לתשלום", text: "חשמל, מים, ארנונה" },
-          ].map((o) => (
-            <li key={o.href}>
-              <Link href={o.href} onClick={() => setCapture(false)} className="pressable flex items-center gap-3 rounded-2xl bg-surface-2 p-3">
-                <span aria-hidden className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface text-[22px]">
-                  {o.emoji}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold">{o.title}</span>
-                  <span className="footnote block text-muted">{o.text}</span>
-                </span>
-                <ChevronLeft className="size-5 text-muted-2" />
-              </Link>
-            </li>
-          ))}
-        </ul>
       </Sheet>
     </>
   );

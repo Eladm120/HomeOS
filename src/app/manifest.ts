@@ -14,8 +14,8 @@ export default function manifest(): MetadataRoute.Manifest & ShareTarget {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f7f5fb",
-    theme_color: "#f7f5fb",
+    background_color: "#121010",
+    theme_color: "#121010",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },

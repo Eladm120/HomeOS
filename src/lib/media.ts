@@ -17,7 +17,8 @@ export type MediaModule =
   | "documents"
   | "plants"
   | "receipts"
-  | "bills";
+  | "bills"
+  | "household";
 
 export function thumbPathFor(path: string): string {
   return path.endsWith(".webp") ? path.replace(/\.webp$/, "_thumb.webp") : path;

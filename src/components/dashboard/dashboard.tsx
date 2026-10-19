@@ -12,6 +12,7 @@ import { saveDashboardLayout } from "@/server/actions/dashboard";
 import { BriefCard, SetupStrip, StarterCard, useDismissed, type BriefChip } from "./brief";
 import { CustomizeSheet } from "./customize-sheet";
 import { QuickActions } from "./quick-actions";
+import { HomeHero, STAT_ICONS, type HeroStat } from "./home-hero";
 import { AttentionWidget, Avatar, EmptyTile, GroceryWidget, MealsWidget, ProjectsWidget, SmartHomeWidget, TasksWidget, WidgetError, type EmptyTileProps } from "./widgets";
 import type { DashboardProps } from "./types";
 
@@ -76,12 +77,20 @@ export function Dashboard(p: DashboardProps) {
     [p.alerts, p.tasks, p.grocery, p.meals, ready],
   );
   const todayOpen = p.tasks.filter((t) => t.days <= 0).length;
-  const chips = [
-    p.grocery.count ? { key: "g", icon: ShoppingBasket, text: `${p.grocery.count} לקנות`, href: "/shopping" } : null,
-    todayOpen ? { key: "t", icon: ListChecks, text: `${todayOpen} משימות היום`, href: "#tasks" } : null,
-    p.meals[0] ? { key: "m", icon: UtensilsCrossed, text: `${p.meals[0].slot}: ${p.meals[0].title}`, href: p.meals[0].href } : null,
-  ].filter((c): c is BriefChip => !!c);
-  const firstName = p.userName.trim().split(/\s+/)[0] ?? "";
+  // The brief's next steps: always the same three doors, the most relevant first.
+  const chips: BriefChip[] = [
+    { key: "g", icon: ShoppingBasket, text: "הוספה לסופר", href: "/shopping" },
+    { key: "m", icon: UtensilsCrossed, text: p.meals.length ? "לתפריט השבוע" : "תכנון ארוחה", href: "/meals" },
+    { key: "t", icon: ListChecks, text: todayOpen ? `משימות (${todayOpen})` : "משימות", href: todayOpen ? "#tasks" : "/chores" },
+  ];
+  // "אלעד ונעה": everyone at home, first names, me first.
+  const firstNames = [...p.members].sort((a, b) => Number(b.id === p.currentUserId) - Number(a.id === p.currentUserId)).map((m) => m.name.trim().split(/\s+/)[0]).filter(Boolean);
+  const names = firstNames.length > 1 ? `${firstNames.slice(0, -1).join(", ")} ו${firstNames[firstNames.length - 1]}` : (firstNames[0] ?? p.userName.trim().split(/\s+/)[0] ?? "");
+  const heroStats: HeroStat[] = [
+    { key: "g", icon: STAT_ICONS.grocery, value: p.grocery.count, label: "לקנות", href: "/shopping" },
+    { key: "t", icon: STAT_ICONS.tasks, value: todayOpen, label: "משימות היום", href: "/chores" },
+    { key: "m", icon: STAT_ICONS.meals, value: p.meals.length, label: p.meals.length === 1 ? "ארוחה היום" : "ארוחות היום", href: "/meals" },
+  ];
 
   const [starterHidden, hideStarter] = useDismissed(`homeos:starter-hidden:${p.householdId}`);
   const [setupHidden, hideSetup] = useDismissed(`homeos:setup-hidden:${p.householdId}`);
@@ -161,44 +170,39 @@ export function Dashboard(p: DashboardProps) {
   return (
     <div className="relative pb-4">
       {!p.preview && <RealtimeSync householdId={p.householdId} />}
-      {/* A soft lavender/peach wash behind the greeting, like light through a window */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-[-1rem] top-0 -z-10 h-[340px] bg-[radial-gradient(70%_80%_at_85%_0%,color-mix(in_oklab,var(--accent-glow)_38%,transparent),transparent_70%),radial-gradient(60%_70%_at_0%_10%,color-mix(in_oklab,var(--peach)_26%,transparent),transparent_70%)]" />
-
-      {/* Personal header */}
-      <header className="pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-5 lg:pt-8">
-        <div className="flex items-center gap-2">
-          <Link href="/household" className="min-w-0 flex-1 truncate text-[15px] font-semibold text-foreground/80">
-            {p.householdName}
-          </Link>
-          <Link href="/search" className="pressable grid size-10 place-items-center rounded-full bg-surface text-foreground/80 shadow-[var(--card-shadow)]" aria-label="חיפוש">
-            <Search className="size-[18px]" strokeWidth={2.25} />
-          </Link>
-          <Link
-            href="/notifications"
-            className="pressable relative grid size-10 place-items-center rounded-full bg-surface text-foreground/80 shadow-[var(--card-shadow)]"
-            aria-label={p.unreadNotifications ? `התראות, ${p.unreadNotifications} חדשות` : "התראות"}
-          >
-            <Bell className="size-[18px]" strokeWidth={2.25} />
-            {!!p.unreadNotifications && <span className="absolute top-2 end-2.5 size-2.5 rounded-full bg-primary ring-2 ring-surface" />}
-          </Link>
+      {/* Personal header: who's home, when, and the two doors (search, notifications) */}
+      <header className="flex items-center gap-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-5 lg:pt-8">
+        <Link href="/household/settings" className="flex shrink-0 -space-x-3 space-x-reverse" aria-label="חברי הבית">
+          {p.members.slice(0, 3).map((m, idx) => (
+            <Avatar key={m.id} name={m.name} index={idx} className="size-11 text-[16px] ring-[3px] ring-background" />
+          ))}
+        </Link>
+        <div className="min-w-0 flex-1 animate-fade-up">
+          <p className="truncate text-[13px] text-muted">{p.greeting},</p>
+          <h1 className="truncate text-[22px] leading-tight font-bold tracking-[-0.02em] [font-family:var(--font-display)]">{names || "ברוכים הבאים"}</h1>
         </div>
-        <div className="mt-7 flex items-end justify-between gap-3">
-          <div className="min-w-0 animate-fade-up">
-            <p className="text-[13px] font-semibold text-primary">{p.dateLine}</p>
-            <h1 className="mt-1.5 text-[34px] leading-[1.05] font-bold tracking-[-0.03em] [font-family:var(--font-display)]">
-              <span className="block text-muted">{p.greeting},</span>
-              {firstName || "ברוכים הבאים"}
-            </h1>
-          </div>
-          <Link href="/household/settings" className="mb-1 flex shrink-0 -space-x-2.5 space-x-reverse" aria-label="חברי הבית">
-            {p.members.slice(0, 4).map((m, idx) => (
-              <Avatar key={m.id} name={m.name} index={idx} className="size-10 text-[15px] ring-[3px] ring-background" />
-            ))}
-          </Link>
-        </div>
+        <Link href="/search" className="pressable grid size-11 shrink-0 place-items-center rounded-full bg-surface text-foreground/85 shadow-[var(--card-shadow)]" aria-label="חיפוש">
+          <Search className="size-[19px]" strokeWidth={2.1} />
+        </Link>
+        <Link
+          href="/notifications"
+          className="pressable relative grid size-11 shrink-0 place-items-center rounded-full bg-surface text-foreground/85 shadow-[var(--card-shadow)]"
+          aria-label={p.unreadNotifications ? `התראות, ${p.unreadNotifications} חדשות` : "התראות"}
+        >
+          <Bell className="size-[19px]" strokeWidth={2.1} />
+          {!!p.unreadNotifications && <span className="absolute top-2.5 end-2.5 size-2.5 rounded-full bg-primary ring-2 ring-surface" />}
+        </Link>
       </header>
 
       <div className="stagger space-y-4">
+        <p style={stagger()} className="-mt-2 px-1 text-[13px] font-medium text-muted">
+          {p.dateLine}
+        </p>
+
+        <div style={stagger()}>
+          <HomeHero householdId={p.householdId} householdName={p.householdName} coverPath={p.coverPath} canEdit={p.isOwner} stats={heroStats} preview={p.preview} />
+        </div>
+
         <div style={stagger()}>
           {showStarter ? (
             <StarterCard householdName={p.householdName} setup={p.setup} isAlone={p.members.length < 2} onDismiss={hideStarter} />
