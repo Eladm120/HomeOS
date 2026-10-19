@@ -414,7 +414,7 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
 }
 
 export function Avatar({ name, index, className }: { name: string; index: number; className?: string }) {
-  const palette = ["bg-foreground text-background", "bg-primary text-primary-foreground", "bg-sky text-white", "bg-sage text-white"];
+  const palette = ["bg-primary text-primary-foreground", "bg-terracotta text-white", "bg-sage text-white", "bg-sky text-white"];
   return (
     <span title={name} className={cn("grid shrink-0 place-items-center rounded-full font-bold", palette[index % palette.length], className)}>
       {name.slice(0, 1) || "?"}

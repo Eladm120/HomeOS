@@ -13,31 +13,31 @@ export function QuickActions({ categories, inventory, preview }: { categories: P
   const [capture, setCapture] = useState(false);
 
   const btn = "pressable flex flex-col items-center gap-1.5 rounded-2xl py-1 text-center";
-  const icon = "grid size-[58px] place-items-center rounded-[20px] bg-surface text-primary shadow-[var(--card-shadow)] transition-transform";
-  const lead = "grid size-[58px] place-items-center rounded-[20px] bg-primary text-primary-foreground shadow-[0_10px_24px_-10px_var(--accent)]";
+  // Each action wears its own soft colour (tint + same-hue ink) — friendly, never loud.
+  const icon = "grid size-[58px] place-items-center rounded-[20px] shadow-[inset_0_0_0_0.5px_var(--border)] transition-transform";
   return (
     <>
       <nav aria-label="פעולות מהירות" className="grid grid-cols-4 gap-1">
         <button type="button" className={btn} onClick={() => setAdd(true)}>
-          <span className={lead}>
+          <span className={`${icon} bg-primary-soft text-primary`}>
             <ShoppingBasket className="size-6" strokeWidth={2.1} />
           </span>
           <span className="text-[12px] leading-tight font-medium text-foreground/80">מוצר לסופר</span>
         </button>
         <button type="button" className={btn} onClick={() => setCapture(true)}>
-          <span className={icon}>
+          <span className={`${icon} bg-terracotta-soft text-terracotta`}>
             <Camera className="size-6" strokeWidth={2.1} />
           </span>
           <span className="text-[12px] leading-tight font-medium text-foreground/80">צילום</span>
         </button>
         <Link href="/recipes/new" className={btn}>
-          <span className={icon}>
+          <span className={`${icon} bg-honey-soft text-honey`}>
             <ChefHat className="size-6" strokeWidth={2.1} />
           </span>
           <span className="text-[12px] leading-tight font-medium text-foreground/80">מתכון</span>
         </Link>
         <Link href="/chores?new=1" className={btn}>
-          <span className={icon}>
+          <span className={`${icon} bg-sage-soft text-sage`}>
             <ListPlus className="size-6" strokeWidth={2.1} />
           </span>
           <span className="text-[12px] leading-tight font-medium text-foreground/80">משימה</span>
