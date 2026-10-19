@@ -24,7 +24,6 @@ export default function manifest(): MetadataRoute.Manifest & ShareTarget {
     share_target: { action: "/recipes/new", method: "GET", params: { title: "title", text: "text", url: "url" } },
     shortcuts: [
       { name: "רשימת קניות", url: "/shopping" },
-      { name: "עוזר HomeOS", url: "/assistant" },
       { name: "מלאי", url: "/inventory" },
     ],
   };

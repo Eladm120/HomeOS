@@ -194,6 +194,11 @@ export function InventoryView({
                         <div className="truncate text-[17px]">{item.name}</div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                           {locName(item.location_id) && <span>{locName(item.location_id)}</span>}
+                          {item.min_threshold != null ? (
+                            <span className="num">מינימום {formatQuantity(item.min_threshold)}</span>
+                          ) : (
+                            <span className="text-muted-2">בלי מינימום</span>
+                          )}
                           {level === "out" && <Badge tone="danger">נגמר</Badge>}
                           {level === "low" && <Badge tone="amber">נמוך</Badge>}
                           {exp?.state === "expired" && <Badge tone="danger">פג תוקף</Badge>}

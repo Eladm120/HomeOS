@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ASSISTANT_ITEM, NAV_ITEMS, isActive } from "./nav-items";
+import { NAV_ITEMS, isActive } from "./nav-items";
 import { ThemeToggle } from "./theme-toggle";
 import { HUB_LINKS } from "./hub-sections";
 
@@ -11,14 +11,14 @@ const SIDEBAR_LINKS = HUB_LINKS.map((i) => ({ href: i.href, label: i.label }));
 
 /**
  * Floating Liquid Glass tab bar (iOS 26 style): a glass capsule with a sliding
- * lens behind the active tab, plus a separate glowing AI button.
+ * lens behind the active tab. (The AI assistant is parked: its page still
+ * works at /assistant once an API key is set, it just isn't on the bar.)
  */
 export function BottomNav({ forcePath }: { forcePath?: string } = {}) {
   const routePath = usePathname();
   const pathname = forcePath ?? routePath;
   if (pathname.startsWith("/shopping/mode")) return null;
   const activeIdx = NAV_ITEMS.findIndex((i) => isActive(i, pathname));
-  const aiActive = isActive(ASSISTANT_ITEM, pathname);
 
   return (
     <nav aria-label="ניווט ראשי" className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] lg:hidden">
@@ -51,14 +51,6 @@ export function BottomNav({ forcePath }: { forcePath?: string } = {}) {
             );
           })}
         </ul>
-        <Link
-          href={ASSISTANT_ITEM.href}
-          aria-label={ASSISTANT_ITEM.label}
-          aria-current={aiActive ? "page" : undefined}
-          className="glass ai-glow pressable pointer-events-auto grid size-[62px] shrink-0 place-items-center rounded-full"
-        >
-          <ASSISTANT_ITEM.icon className={cn("size-6", aiActive ? "text-primary" : "text-foreground/80")} strokeWidth={2} />
-        </Link>
       </div>
     </nav>
   );
@@ -67,7 +59,7 @@ export function BottomNav({ forcePath }: { forcePath?: string } = {}) {
 export function Sidebar({ householdName, forcePath }: { householdName: string; forcePath?: string }) {
   const routePath = usePathname();
   const pathname = forcePath ?? routePath;
-  const items = [...NAV_ITEMS, ASSISTANT_ITEM];
+  const items = NAV_ITEMS;
   return (
     <aside className="sticky top-0 hidden h-dvh w-72 shrink-0 p-3 lg:block">
       <div className="glass flex h-full flex-col rounded-[2rem] px-3 py-5">
