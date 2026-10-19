@@ -88,22 +88,22 @@ export function CustomizeSheet({
 }
 
 const ACCENTS = [
-  { id: "ember", label: "גחלת", swatch: "#df4f22" },
-  { id: "cobalt", label: "קובלט", swatch: "#2f55e8" },
-  { id: "forest", label: "יער", swatch: "#17784a" },
-  { id: "graphite", label: "גרפיט", swatch: "#18181b" },
+  { id: "lavender", label: "לבנדר", swatch: "#7062e8" },
+  { id: "peach", label: "אפרסק", swatch: "#e5733d" },
+  { id: "mint", label: "מנטה", swatch: "#229b72" },
+  { id: "sky", label: "שמיים", swatch: "#3f7ad6" },
 ] as const;
 
 /** The house colour, per device: applied on <html data-accent> before first paint (see the root layout). */
 function AccentPicker() {
-  const [accent, setAccent] = useState<string>("ember");
-  useEffect(() => setAccent(document.documentElement.dataset.accent ?? "ember"), []);
+  const [accent, setAccent] = useState<string>("lavender");
+  useEffect(() => setAccent(document.documentElement.dataset.accent ?? "lavender"), []);
   function pick(id: string) {
     setAccent(id);
-    if (id === "ember") delete document.documentElement.dataset.accent;
+    if (id === "lavender") delete document.documentElement.dataset.accent;
     else document.documentElement.dataset.accent = id;
     try {
-      if (id === "ember") localStorage.removeItem("homeos:accent");
+      if (id === "lavender") localStorage.removeItem("homeos:accent");
       else localStorage.setItem("homeos:accent", id);
     } catch {
       /* private mode: this visit only */

@@ -9,7 +9,6 @@ import { buildBrief, DEFAULT_LAYOUT, type DashboardLayout, type WidgetId } from 
 import { primeSignedUrls } from "@/lib/media";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { saveDashboardLayout } from "@/server/actions/dashboard";
-import { AppGlyph } from "@/components/layout/app-nav";
 import { BriefCard, SetupStrip, StarterCard, useDismissed, type BriefChip } from "./brief";
 import { CustomizeSheet } from "./customize-sheet";
 import { QuickActions } from "./quick-actions";
@@ -162,18 +161,15 @@ export function Dashboard(p: DashboardProps) {
   return (
     <div className="relative pb-4">
       {!p.preview && <RealtimeSync householdId={p.householdId} />}
+      {/* A soft lavender/peach wash behind the greeting, like light through a window */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-[-1rem] top-0 -z-10 h-[340px] bg-[radial-gradient(70%_80%_at_85%_0%,color-mix(in_oklab,var(--accent-glow)_38%,transparent),transparent_70%),radial-gradient(60%_70%_at_0%_10%,color-mix(in_oklab,var(--peach)_26%,transparent),transparent_70%)]" />
 
       {/* Personal header */}
       <header className="pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-5 lg:pt-8">
         <div className="flex items-center gap-2">
-          <Link href="/household" className="pressable flex min-w-0 items-center gap-2.5">
-            <AppGlyph className="size-9" />
-            <span className="min-w-0">
-              <span className="block truncate text-[15px] leading-tight font-semibold">{p.householdName}</span>
-              <span className="block text-[12px] leading-tight text-muted">HomeOS</span>
-            </span>
+          <Link href="/household" className="min-w-0 flex-1 truncate text-[15px] font-semibold text-foreground/80">
+            {p.householdName}
           </Link>
-          <span className="flex-1" />
           <Link href="/search" className="pressable grid size-10 place-items-center rounded-full bg-surface text-foreground/80 shadow-[var(--card-shadow)]" aria-label="חיפוש">
             <Search className="size-[18px]" strokeWidth={2.25} />
           </Link>

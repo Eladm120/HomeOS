@@ -54,7 +54,7 @@ export function BriefCard({ brief, chips, more = 0, greeting, preview }: { brief
     <section aria-label="התדריך של היום" className="hero p-5">
       <div className="flex items-center gap-2">
         <span className="hero-chip flex h-7 items-center gap-1.5 rounded-full ps-2 pe-2.5 text-[12px] font-semibold">
-          <Period className="size-3.5 text-[var(--accent-glow)]" strokeWidth={2.5} />
+          <Period className="size-3.5 text-primary" strokeWidth={2.5} />
           התדריך של היום
         </span>
       </div>
@@ -68,7 +68,7 @@ export function BriefCard({ brief, chips, more = 0, greeting, preview }: { brief
         <ul className="mt-4 space-y-1.5">
           {insights.map((x) => (
             <li key={x.key} className={cn("hero-row flex items-center gap-3 p-2 ps-2.5 transition-opacity", busy === x.key && "opacity-50")}>
-              <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/8 text-[17px]">
+              <span aria-hidden className="grid size-9 shrink-0 place-items-center hero-well rounded-xl text-[17px]">
                 {x.emoji}
               </span>
               <Link href={x.href} className="min-w-0 flex-1 active:opacity-60">
@@ -128,11 +128,11 @@ export function StarterCard({ householdName, setup, isAlone, onDismiss }: { hous
     <section aria-label="מתחילים" className="hero p-5">
       <div className="flex items-center gap-2">
         <span className="hero-chip flex h-7 items-center gap-1.5 rounded-full ps-2 pe-2.5 text-[12px] font-semibold">
-          <Sparkles className="size-3.5 text-[var(--accent-glow)]" strokeWidth={2.5} />
+          <Sparkles className="size-3.5 text-primary" strokeWidth={2.5} />
           {householdName}
         </span>
         <span className="flex-1" />
-        <button type="button" onClick={onDismiss} className="hero-muted grid size-8 place-items-center rounded-full active:bg-white/10" aria-label="הסתרה">
+        <button type="button" onClick={onDismiss} className="hero-muted grid size-8 place-items-center rounded-full active:bg-white/40" aria-label="הסתרה">
           <X className="size-4" />
         </button>
       </div>
@@ -143,7 +143,7 @@ export function StarterCard({ householdName, setup, isAlone, onDismiss }: { hous
           const isDone = done.has(s.key);
           return (
             <Link key={s.key} href={s.href} className={cn("hero-row pressable flex flex-col gap-3 p-3", isDone && "opacity-50")}>
-              <span aria-hidden className={cn("grid size-9 place-items-center rounded-xl", isDone ? "bg-white/10" : "bg-[var(--accent)] text-[var(--accent-ink)]")}>
+              <span aria-hidden className={cn("grid size-9 place-items-center rounded-xl", isDone ? "hero-well text-sage" : "bg-[var(--accent)] text-[var(--accent-ink)]")}>
                 {isDone ? <Check className="size-[18px]" strokeWidth={2.75} /> : <s.icon className="size-[18px]" strokeWidth={2.25} />}
               </span>
               <span>
@@ -156,7 +156,7 @@ export function StarterCard({ householdName, setup, isAlone, onDismiss }: { hous
       </div>
       {isAlone && (
         <Link href="/household/settings" className="hero-row pressable mt-2 flex items-center gap-3 p-3 text-[14px] font-semibold">
-          <UserPlus className="size-[18px] text-[var(--accent-glow)]" />
+          <UserPlus className="size-[18px] text-primary" />
           להזמין את בן/בת הזוג לבית
           <ChevronLeft className="hero-muted ms-auto size-4" />
         </Link>

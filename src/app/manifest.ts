@@ -14,8 +14,8 @@ export default function manifest(): MetadataRoute.Manifest & ShareTarget {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f4f4f2",
-    theme_color: "#f4f4f2",
+    background_color: "#f7f5fb",
+    theme_color: "#f7f5fb",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
@@ -24,7 +24,6 @@ export default function manifest(): MetadataRoute.Manifest & ShareTarget {
     share_target: { action: "/recipes/new", method: "GET", params: { title: "title", text: "text", url: "url" } },
     shortcuts: [
       { name: "רשימת קניות", url: "/shopping" },
-      { name: "עוזר HomeOS", url: "/assistant" },
       { name: "מלאי", url: "/inventory" },
     ],
   };
