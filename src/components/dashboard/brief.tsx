@@ -3,23 +3,40 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Loader2, Sparkles, X } from "lucide-react";
+import { Check, ChefHat, ChevronLeft, ListChecks, Loader2, Moon, Package, ShoppingBasket, Sparkles, Sun, Sunrise, Sunset, UserPlus, X, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { Brief, BriefInsight } from "@/lib/dashboard";
 import { cn } from "@/lib/utils";
 import { resolveAlert } from "@/server/actions/alerts";
 import type { SetupStep } from "./types";
 
+export interface BriefChip {
+  key: string;
+  icon: LucideIcon;
+  text: string;
+  href: string;
+}
+
+/** Time-of-day glyph for the hero, from the greeting already computed in the household's timezone. */
+function periodIcon(greeting: string): LucideIcon {
+  if (greeting.includes("בוקר")) return Sunrise;
+  if (greeting.includes("צהריים")) return Sun;
+  if (greeting.includes("ערב")) return Sunset;
+  return Moon;
+}
+
 /**
- * The day at a glance: one sentence, then up to three things worth doing, each
- * with a real action. Built from the household's data only — on a quiet day it
- * says so instead of filling the space.
+ * The day at a glance, on the screen's one dark surface: a sentence, then up to
+ * three things worth doing, each with a real action. Built from the household's
+ * data only — on a quiet day it says so instead of filling the space.
  */
-export function BriefCard({ brief, chips, more = 0, preview }: { brief: Brief; chips: { key: string; text: string; href: string }[]; more?: number; preview?: boolean }) {
+export function BriefCard({ brief, chips, more = 0, greeting, preview }: { brief: Brief; chips: BriefChip[]; more?: number; greeting: string; preview?: boolean }) {
   const router = useRouter();
   const [gone, setGone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | null>(null);
   const insights = brief.insights.filter((x) => !gone.has(x.key));
+  const Period = periodIcon(greeting);
+  const allHandled = brief.insights.length > 0 && !insights.length;
 
   async function act(x: BriefInsight) {
     if (!x.action) return;
@@ -34,39 +51,41 @@ export function BriefCard({ brief, chips, more = 0, preview }: { brief: Brief; c
   }
 
   return (
-    <section aria-label="התדריך של היום" className="brief-surface p-4">
-      <div className="mb-1.5 flex items-center gap-2">
-        <span className="grid size-7 place-items-center rounded-full bg-[linear-gradient(140deg,var(--accent),var(--teal))] text-white shadow-sm">
-          <Sparkles className="size-3.5" strokeWidth={2.5} />
+    <section aria-label="התדריך של היום" className="hero p-5">
+      <div className="flex items-center gap-2">
+        <span className="hero-chip flex h-7 items-center gap-1.5 rounded-full ps-2 pe-2.5 text-[12px] font-semibold">
+          <Period className="size-3.5 text-[var(--accent-glow)]" strokeWidth={2.5} />
+          התדריך של היום
         </span>
-        <span className="eyebrow">התדריך של היום</span>
       </div>
-      <p className="text-[21px] leading-snug font-semibold text-balance [font-family:var(--font-display)]">
-        {insights.length || !brief.insights.length ? brief.headline : "טיפלתם בהכל. יום רגוע ☕"}
+
+      <p className="mt-3 text-[24px] leading-[1.2] font-semibold tracking-[-0.02em] text-balance [font-family:var(--font-display)]">
+        {allHandled ? "טיפלתם בהכל. יום רגוע." : brief.headline}
       </p>
+      {!brief.insights.length && <p className="hero-muted mt-1.5 text-[14px]">אין חוסרים במלאי, משימות באיחור או תשלומים קרובים.</p>}
 
       {insights.length > 0 && (
-        <ul className="mt-3 space-y-1.5">
+        <ul className="mt-4 space-y-1.5">
           {insights.map((x) => (
-            <li key={x.key} className={cn("brief-row flex items-center gap-3 p-2 ps-2.5 transition-opacity", busy === x.key && "opacity-60")}>
-              <span aria-hidden className="cat-tint grid size-9 shrink-0 place-items-center rounded-xl text-[18px]" style={{ "--h": x.hue } as React.CSSProperties}>
+            <li key={x.key} className={cn("hero-row flex items-center gap-3 p-2 ps-2.5 transition-opacity", busy === x.key && "opacity-50")}>
+              <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/8 text-[17px]">
                 {x.emoji}
               </span>
               <Link href={x.href} className="min-w-0 flex-1 active:opacity-60">
-                <span className="block truncate text-[15px] font-semibold">{x.text}</span>
-                {x.detail && <span className="block truncate text-[12px] text-muted">{x.detail}</span>}
+                <span className="line-clamp-2 block text-[15px] leading-snug font-semibold">{x.text}</span>
+                {x.detail && <span className="hero-muted block truncate text-[12px]">{x.detail}</span>}
               </Link>
               {x.action ? (
                 <button
                   type="button"
                   disabled={busy === x.key}
                   onClick={() => act(x)}
-                  className="pressable flex h-8 shrink-0 items-center rounded-full bg-primary px-3 text-[13px] font-semibold text-primary-foreground"
+                  className="pressable flex h-8 min-w-14 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] px-3 text-[13px] font-bold text-[var(--accent-ink)]"
                 >
                   {busy === x.key ? <Loader2 className="size-4 animate-spin" /> : x.action.label}
                 </button>
               ) : x.cta ? (
-                <Link href={x.href} className="pressable flex h-8 shrink-0 items-center rounded-full bg-primary-soft px-3 text-[13px] font-semibold text-primary">
+                <Link href={x.href} className="hero-chip pressable flex h-8 shrink-0 items-center rounded-full px-3 text-[13px] font-semibold">
                   {x.cta}
                 </Link>
               ) : null}
@@ -76,15 +95,16 @@ export function BriefCard({ brief, chips, more = 0, preview }: { brief: Brief; c
       )}
 
       {insights.length > 0 && more > 0 && (
-        <Link href="#attention" className="mt-2 flex items-center gap-1 px-1 text-[13px] font-semibold text-primary">
-          ועוד {more} ב״דורש טיפול״ <ChevronLeft className="size-4" />
+        <Link href="#attention" className="hero-muted mt-2.5 flex items-center gap-1 px-1 text-[13px] font-medium">
+          ועוד {more} דברים ב״דורש טיפול״ <ChevronLeft className="size-4" />
         </Link>
       )}
 
       {chips.length > 0 && (
-        <div className="scrollbar-none -mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4">
+        <div className="scrollbar-none -mx-5 mt-4 flex gap-1.5 overflow-x-auto px-5">
           {chips.map((c) => (
-            <Link key={c.key} href={c.href} className="pressable flex h-8 shrink-0 items-center rounded-full bg-fill px-3 text-[13px] font-medium">
+            <Link key={c.key} href={c.href} className="hero-chip pressable flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium">
+              <c.icon className="size-3.5 opacity-70" />
               {c.text}
             </Link>
           ))}
@@ -94,46 +114,51 @@ export function BriefCard({ brief, chips, more = 0, preview }: { brief: Brief; c
   );
 }
 
-const STARTERS = [
-  { key: "grocery", emoji: "🛒", hue: 75, title: "רשימת קניות משותפת", text: "מה חסר? מתחילים כאן", href: "/shopping" },
-  { key: "inventory", emoji: "📦", hue: 55, title: "מה יש בבית", text: "המלאי מזמין לבד מה שנגמר", href: "/inventory/setup" },
-  { key: "chores", emoji: "🧺", hue: 150, title: "משימות קבועות", text: "מי עושה מה, ומתי", href: "/chores?new=1" },
-  { key: "recipes", emoji: "🍳", hue: 30, title: "מתכון ראשון", text: "מקישור לאינסטגרם או מצילום", href: "/recipes/new" },
-] as const;
+const STARTERS: { key: string; icon: LucideIcon; title: string; text: string; href: string }[] = [
+  { key: "grocery", icon: ShoppingBasket, title: "רשימת קניות", text: "משותפת, בזמן אמת", href: "/shopping" },
+  { key: "inventory", icon: Package, title: "מה יש בבית", text: "מה שנגמר — נכנס לרשימה", href: "/inventory/setup" },
+  { key: "chores", icon: ListChecks, title: "משימות קבועות", text: "מי עושה מה, ומתי", href: "/chores?new=1" },
+  { key: "recipes", icon: ChefHat, title: "מתכון ראשון", text: "מאינסטגרם, אתר או צילום", href: "/recipes/new" },
+];
 
 /** A brand-new household: four doors into the app instead of empty widgets. */
 export function StarterCard({ householdName, setup, isAlone, onDismiss }: { householdName: string; setup: SetupStep[]; isAlone: boolean; onDismiss: () => void }) {
   const done = new Set(setup.filter((s) => s.done).map((s) => s.key));
   return (
-    <section aria-label="מתחילים" className="brief-surface p-4">
-      <div className="mb-1 flex items-center gap-2">
-        <span className="grid size-7 place-items-center rounded-full bg-[linear-gradient(140deg,var(--accent),var(--teal))] text-white shadow-sm">
-          <Sparkles className="size-3.5" strokeWidth={2.5} />
+    <section aria-label="מתחילים" className="hero p-5">
+      <div className="flex items-center gap-2">
+        <span className="hero-chip flex h-7 items-center gap-1.5 rounded-full ps-2 pe-2.5 text-[12px] font-semibold">
+          <Sparkles className="size-3.5 text-[var(--accent-glow)]" strokeWidth={2.5} />
+          {householdName}
         </span>
-        <span className="eyebrow flex-1">{householdName}</span>
-        <button type="button" onClick={onDismiss} className="grid size-8 place-items-center rounded-full text-muted active:bg-fill" aria-label="הסתרה">
+        <span className="flex-1" />
+        <button type="button" onClick={onDismiss} className="hero-muted grid size-8 place-items-center rounded-full active:bg-white/10" aria-label="הסתרה">
           <X className="size-4" />
         </button>
       </div>
-      <p className="text-[21px] leading-snug font-semibold [font-family:var(--font-display)]">הבית מוכן. מאיפה מתחילים?</p>
-      <p className="footnote mt-0.5 text-muted">כל צעד לוקח דקה, וכל אחד מכם יכול להתחיל ממה שנוח לו.</p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {STARTERS.map((s) => (
-          <Link key={s.key} href={s.href} className={cn("brief-row pressable flex flex-col gap-2 p-3", done.has(s.key) && "opacity-55")}>
-            <span aria-hidden className="cat-tint grid size-9 place-items-center rounded-xl text-[18px]" style={{ "--h": s.hue } as React.CSSProperties}>
-              {done.has(s.key) ? "✓" : s.emoji}
-            </span>
-            <span>
-              <span className="block text-[14px] leading-tight font-semibold">{s.title}</span>
-              <span className="mt-0.5 block text-[12px] leading-tight text-muted">{s.text}</span>
-            </span>
-          </Link>
-        ))}
+      <p className="mt-3 text-[24px] leading-[1.2] font-semibold tracking-[-0.02em] [font-family:var(--font-display)]">הבית מוכן. מאיפה מתחילים?</p>
+      <p className="hero-muted mt-1 text-[14px]">כל צעד לוקח דקה. אפשר להתחיל מכל אחד.</p>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {STARTERS.map((s) => {
+          const isDone = done.has(s.key);
+          return (
+            <Link key={s.key} href={s.href} className={cn("hero-row pressable flex flex-col gap-3 p-3", isDone && "opacity-50")}>
+              <span aria-hidden className={cn("grid size-9 place-items-center rounded-xl", isDone ? "bg-white/10" : "bg-[var(--accent)] text-[var(--accent-ink)]")}>
+                {isDone ? <Check className="size-[18px]" strokeWidth={2.75} /> : <s.icon className="size-[18px]" strokeWidth={2.25} />}
+              </span>
+              <span>
+                <span className="block text-[14px] leading-tight font-semibold">{s.title}</span>
+                <span className="hero-muted mt-0.5 block text-[12px] leading-tight">{s.text}</span>
+              </span>
+            </Link>
+          );
+        })}
       </div>
       {isAlone && (
-        <Link href="/household/settings" className="mt-2 flex items-center gap-2 rounded-2xl px-1 py-2 text-[14px] font-semibold text-primary">
-          💌 להזמין את בן/בת הזוג לבית
-          <ChevronLeft className="ms-auto size-4" />
+        <Link href="/household/settings" className="hero-row pressable mt-2 flex items-center gap-3 p-3 text-[14px] font-semibold">
+          <UserPlus className="size-[18px] text-[var(--accent-glow)]" />
+          להזמין את בן/בת הזוג לבית
+          <ChevronLeft className="hero-muted ms-auto size-4" />
         </Link>
       )}
     </section>

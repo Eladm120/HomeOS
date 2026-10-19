@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Eye, EyeOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowDown, ArrowUp, Check, Eye, EyeOff } from "lucide-react";
 import { moveWidget, toggleWidget, WIDGETS, type DashboardLayout, type WidgetId } from "@/lib/dashboard";
 import { cn } from "@/lib/utils";
 import { Sheet } from "@/components/ui/sheet";
@@ -77,10 +78,60 @@ export function CustomizeSheet({
           );
         })}
       </ul>
-      <div className="mt-4 flex items-center justify-between rounded-2xl bg-surface-2 p-2 ps-3">
+      <AccentPicker />
+      <div className="mt-2 flex items-center justify-between rounded-2xl bg-surface-2 p-2 ps-3">
         <span className="font-semibold">מראה בהיר / כהה</span>
         <ThemeToggle />
       </div>
     </Sheet>
+  );
+}
+
+const ACCENTS = [
+  { id: "ember", label: "גחלת", swatch: "#df4f22" },
+  { id: "cobalt", label: "קובלט", swatch: "#2f55e8" },
+  { id: "forest", label: "יער", swatch: "#17784a" },
+  { id: "graphite", label: "גרפיט", swatch: "#18181b" },
+] as const;
+
+/** The house colour, per device: applied on <html data-accent> before first paint (see the root layout). */
+function AccentPicker() {
+  const [accent, setAccent] = useState<string>("ember");
+  useEffect(() => setAccent(document.documentElement.dataset.accent ?? "ember"), []);
+  function pick(id: string) {
+    setAccent(id);
+    if (id === "ember") delete document.documentElement.dataset.accent;
+    else document.documentElement.dataset.accent = id;
+    try {
+      if (id === "ember") localStorage.removeItem("homeos:accent");
+      else localStorage.setItem("homeos:accent", id);
+    } catch {
+      /* private mode: this visit only */
+    }
+  }
+  return (
+    <div className="mt-4 rounded-2xl bg-surface-2 p-3">
+      <p className="mb-2.5 font-semibold">צבע הבית</p>
+      <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="צבע הבית">
+        {ACCENTS.map((a) => (
+          <button
+            key={a.id}
+            type="button"
+            role="radio"
+            aria-checked={accent === a.id}
+            onClick={() => pick(a.id)}
+            className="flex flex-col items-center gap-1.5 rounded-xl py-1.5 text-[12px] font-medium"
+          >
+            <span
+              className={cn("grid size-10 place-items-center rounded-full transition-shadow", accent === a.id && "shadow-[0_0_0_2px_var(--surface-2),0_0_0_4px_var(--foreground)]")}
+              style={{ background: a.swatch }}
+            >
+              {accent === a.id && <Check className="size-4 text-white" strokeWidth={3} />}
+            </span>
+            {a.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

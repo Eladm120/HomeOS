@@ -3,14 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Search, SlidersHorizontal } from "lucide-react";
+import { Bell, ChefHat, Hammer, Lightbulb, ListChecks, Search, ShoppingBasket, SlidersHorizontal, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { buildBrief, DEFAULT_LAYOUT, type DashboardLayout, type WidgetId } from "@/lib/dashboard";
 import { primeSignedUrls } from "@/lib/media";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { saveDashboardLayout } from "@/server/actions/dashboard";
 import { AppGlyph } from "@/components/layout/app-nav";
-import { BriefCard, SetupStrip, StarterCard, useDismissed } from "./brief";
+import { BriefCard, SetupStrip, StarterCard, useDismissed, type BriefChip } from "./brief";
 import { CustomizeSheet } from "./customize-sheet";
 import { QuickActions } from "./quick-actions";
 import { AttentionWidget, Avatar, EmptyTile, GroceryWidget, MealsWidget, ProjectsWidget, SmartHomeWidget, TasksWidget, WidgetError, type EmptyTileProps } from "./widgets";
@@ -78,10 +78,11 @@ export function Dashboard(p: DashboardProps) {
   );
   const todayOpen = p.tasks.filter((t) => t.days <= 0).length;
   const chips = [
-    p.grocery.count ? { key: "g", text: `🛒 ${p.grocery.count} לקנות`, href: "/shopping" } : null,
-    todayOpen ? { key: "t", text: `🧺 ${todayOpen} משימות היום`, href: "#tasks" } : null,
-    p.meals[0] ? { key: "m", text: `🍽️ ${p.meals[0].slot}: ${p.meals[0].title}`, href: p.meals[0].href } : null,
-  ].filter((c): c is { key: string; text: string; href: string } => !!c);
+    p.grocery.count ? { key: "g", icon: ShoppingBasket, text: `${p.grocery.count} לקנות`, href: "/shopping" } : null,
+    todayOpen ? { key: "t", icon: ListChecks, text: `${todayOpen} משימות היום`, href: "#tasks" } : null,
+    p.meals[0] ? { key: "m", icon: UtensilsCrossed, text: `${p.meals[0].slot}: ${p.meals[0].title}`, href: p.meals[0].href } : null,
+  ].filter((c): c is BriefChip => !!c);
+  const firstName = p.userName.trim().split(/\s+/)[0] ?? "";
 
   const [starterHidden, hideStarter] = useDismissed(`homeos:starter-hidden:${p.householdId}`);
   const [setupHidden, hideSetup] = useDismissed(`homeos:setup-hidden:${p.householdId}`);
@@ -114,7 +115,7 @@ export function Dashboard(p: DashboardProps) {
         if (p.tasks.length || p.tasksDoneToday) blocks.push(<TasksWidget key={id} tasks={p.tasks} doneToday={p.tasksDoneToday} members={p.members} currentUserId={p.currentUserId} preview={p.preview} />);
         else {
           unavailable.tasks = "אין משימות להיום";
-          tiles.push({ key: id, emoji: "🧺", hue: 150, title: "משימות", text: "אין להיום · הוספה", href: "/chores?new=1" });
+          tiles.push({ key: id, icon: ListChecks, title: "משימות", text: "אין להיום · הוספה", href: "/chores?new=1" });
         }
         break;
       case "meals":
@@ -123,8 +124,8 @@ export function Dashboard(p: DashboardProps) {
           unavailable.meals = "לא תוכננה ארוחה להיום";
           tiles.push(
             recipesSaved
-              ? { key: id, emoji: "🍽️", hue: 30, title: "ארוחות", text: "מה אוכלים היום?", href: "/meals" }
-              : { key: id, emoji: "🍳", hue: 30, title: "מתכונים", text: "לשמור מתכון ראשון", href: "/recipes/new" },
+              ? { key: id, icon: UtensilsCrossed, title: "ארוחות", text: "מה אוכלים היום?", href: "/meals" }
+              : { key: id, icon: ChefHat, title: "מתכונים", text: "לשמור מתכון ראשון", href: "/recipes/new" },
           );
         }
         break;
@@ -139,8 +140,8 @@ export function Dashboard(p: DashboardProps) {
           if (p.stage !== "new")
             tiles.push(
               p.smartHome.connected
-                ? { key: id, emoji: "💡", hue: 75, title: "בית חכם", text: "לבחור מכשירים", href: "/smart-home" }
-                : { key: id, emoji: "💡", hue: 75, title: "בית חכם", text: p.isOwner ? "לחבר מזגן ותאורה" : "עוד לא מחובר", href: p.isOwner ? "/settings/integrations" : "/smart-home" },
+                ? { key: id, icon: Lightbulb, title: "בית חכם", text: "לבחור מכשירים", href: "/smart-home" }
+                : { key: id, icon: Lightbulb, title: "בית חכם", text: p.isOwner ? "לחבר מזגן ותאורה" : "עוד לא מחובר", href: p.isOwner ? "/settings/integrations" : "/smart-home" },
             );
         }
         break;
@@ -148,7 +149,7 @@ export function Dashboard(p: DashboardProps) {
         if (p.projects.length || p.purchases.length) blocks.push(<ProjectsWidget key={id} projects={p.projects} purchases={p.purchases} />);
         else {
           unavailable.projects = "אין פרויקטים פעילים";
-          if (p.stage !== "new") tiles.push({ key: id, emoji: "🛠️", hue: 30, title: "פרויקטים", text: "תיקון או שיפוץ בבית", href: "/projects?new=1" });
+          if (p.stage !== "new") tiles.push({ key: id, icon: Hammer, title: "פרויקטים", text: "תיקון או שיפוץ", href: "/projects?new=1" });
         }
         break;
     }
@@ -163,40 +164,39 @@ export function Dashboard(p: DashboardProps) {
       {!p.preview && <RealtimeSync householdId={p.householdId} />}
 
       {/* Personal header */}
-      <header className="pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4 lg:pt-8">
+      <header className="pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-5 lg:pt-8">
         <div className="flex items-center gap-2">
-          <Link href="/household" className="pressable flex min-w-0 items-center gap-2 rounded-full bg-surface py-1 ps-1 pe-3 shadow-[var(--card-shadow)]">
-            <AppGlyph className="size-7" />
-            <span className="truncate text-[14px] font-semibold">{p.householdName}</span>
+          <Link href="/household" className="pressable flex min-w-0 items-center gap-2.5">
+            <AppGlyph className="size-9" />
+            <span className="min-w-0">
+              <span className="block truncate text-[15px] leading-tight font-semibold">{p.householdName}</span>
+              <span className="block text-[12px] leading-tight text-muted">HomeOS</span>
+            </span>
           </Link>
           <span className="flex-1" />
-          <Link href="/search" className="pressable grid size-10 place-items-center rounded-full bg-surface text-foreground/75 shadow-[var(--card-shadow)]" aria-label="חיפוש">
-            <Search className="size-[19px]" />
+          <Link href="/search" className="pressable grid size-10 place-items-center rounded-full bg-surface text-foreground/80 shadow-[var(--card-shadow)]" aria-label="חיפוש">
+            <Search className="size-[18px]" strokeWidth={2.25} />
           </Link>
           <Link
             href="/notifications"
-            className="pressable relative grid size-10 place-items-center rounded-full bg-surface text-foreground/75 shadow-[var(--card-shadow)]"
+            className="pressable relative grid size-10 place-items-center rounded-full bg-surface text-foreground/80 shadow-[var(--card-shadow)]"
             aria-label={p.unreadNotifications ? `התראות, ${p.unreadNotifications} חדשות` : "התראות"}
           >
-            <Bell className="size-[19px]" />
-            {!!p.unreadNotifications && (
-              <span className="num absolute -top-1 -end-1 grid h-5 min-w-5 place-items-center rounded-full bg-terracotta px-1 text-[11px] font-bold text-white">
-                {p.unreadNotifications > 9 ? "9+" : p.unreadNotifications}
-              </span>
-            )}
+            <Bell className="size-[18px]" strokeWidth={2.25} />
+            {!!p.unreadNotifications && <span className="absolute top-2 end-2.5 size-2.5 rounded-full bg-primary ring-2 ring-surface" />}
           </Link>
         </div>
-        <div className="mt-5 flex items-end justify-between gap-3">
+        <div className="mt-7 flex items-end justify-between gap-3">
           <div className="min-w-0 animate-fade-up">
-            <p className="eyebrow">{p.dateLine}</p>
-            <h1 className="large-title mt-1 text-balance">
-              {p.greeting}
-              {p.userName ? `, ${p.userName}` : ""}
+            <p className="text-[13px] font-semibold text-primary">{p.dateLine}</p>
+            <h1 className="mt-1.5 text-[34px] leading-[1.05] font-bold tracking-[-0.03em] [font-family:var(--font-display)]">
+              <span className="block text-muted">{p.greeting},</span>
+              {firstName || "ברוכים הבאים"}
             </h1>
           </div>
-          <Link href="/household/settings" className="mb-1 flex shrink-0 -space-x-2 space-x-reverse" aria-label="חברי הבית">
+          <Link href="/household/settings" className="mb-1 flex shrink-0 -space-x-2.5 space-x-reverse" aria-label="חברי הבית">
             {p.members.slice(0, 4).map((m, idx) => (
-              <Avatar key={m.id} name={m.name} index={idx} className={`size-9 text-[15px] ring-[2.5px] ${m.id === p.currentUserId ? "ring-primary/60" : "ring-background"}`} />
+              <Avatar key={m.id} name={m.name} index={idx} className="size-10 text-[15px] ring-[3px] ring-background" />
             ))}
           </Link>
         </div>
@@ -207,7 +207,7 @@ export function Dashboard(p: DashboardProps) {
           {showStarter ? (
             <StarterCard householdName={p.householdName} setup={p.setup} isAlone={p.members.length < 2} onDismiss={hideStarter} />
           ) : (
-            <BriefCard brief={brief} chips={chips} more={attention.filter((a) => !a.handled).length} preview={p.preview} />
+            <BriefCard brief={brief} chips={chips} greeting={p.greeting} more={attention.filter((a) => !a.handled).length} preview={p.preview} />
           )}
         </div>
 

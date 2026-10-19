@@ -115,7 +115,7 @@ export function buildBrief(i: BriefInput): Brief {
       text: overdue.length === 1 ? `${overdue[0].title} באיחור` : `${overdue.length} משימות באיחור`,
       detail: overdue.length > 1 ? `הראשונה: ${overdue[0].title}` : undefined,
       href: "#tasks",
-      cta: "הצג משימות",
+      cta: "לרשימה",
     });
   }
 
