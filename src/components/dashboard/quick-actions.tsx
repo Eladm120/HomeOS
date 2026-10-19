@@ -12,35 +12,35 @@ export function QuickActions({ categories, inventory, preview }: { categories: P
   const [add, setAdd] = useState(false);
   const [capture, setCapture] = useState(false);
 
-  const btn = "pressable flex flex-col items-center gap-1.5 rounded-2xl py-1 text-center";
-  // Each action wears its own soft colour (tint + same-hue ink) — friendly, never loud.
-  const icon = "grid size-[58px] place-items-center rounded-[20px] shadow-[inset_0_0_0_0.5px_var(--border)] transition-transform";
+  // Keycaps: each action is a small physical key with its own ink colour.
+  const btn = "key flex flex-col items-center justify-center gap-1.5 py-3 text-center";
+  const icon = "grid size-9 place-items-center rounded-xl";
   return (
     <>
-      <nav aria-label="פעולות מהירות" className="grid grid-cols-4 gap-1">
+      <nav aria-label="פעולות מהירות" className="grid grid-cols-4 gap-2.5">
         <button type="button" className={btn} onClick={() => setAdd(true)}>
           <span className={`${icon} bg-primary-soft text-primary`}>
             <ShoppingBasket className="size-6" strokeWidth={2.1} />
           </span>
-          <span className="text-[12px] leading-tight font-medium text-foreground/80">מוצר לסופר</span>
+          <span className="text-[12px] leading-tight font-semibold text-foreground/85">מוצר לסופר</span>
         </button>
         <button type="button" className={btn} onClick={() => setCapture(true)}>
           <span className={`${icon} bg-terracotta-soft text-terracotta`}>
             <Camera className="size-6" strokeWidth={2.1} />
           </span>
-          <span className="text-[12px] leading-tight font-medium text-foreground/80">צילום</span>
+          <span className="text-[12px] leading-tight font-semibold text-foreground/85">צילום</span>
         </button>
         <Link href="/recipes/new" className={btn}>
           <span className={`${icon} bg-honey-soft text-honey`}>
             <ChefHat className="size-6" strokeWidth={2.1} />
           </span>
-          <span className="text-[12px] leading-tight font-medium text-foreground/80">מתכון</span>
+          <span className="text-[12px] leading-tight font-semibold text-foreground/85">מתכון</span>
         </Link>
         <Link href="/chores?new=1" className={btn}>
           <span className={`${icon} bg-sage-soft text-sage`}>
             <ListPlus className="size-6" strokeWidth={2.1} />
           </span>
-          <span className="text-[12px] leading-tight font-medium text-foreground/80">משימה</span>
+          <span className="text-[12px] leading-tight font-semibold text-foreground/85">משימה</span>
         </Link>
       </nav>
 

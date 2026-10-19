@@ -184,10 +184,16 @@ export function Dashboard(p: DashboardProps) {
         </div>
         <div className="mt-7 flex items-end justify-between gap-3">
           <div className="min-w-0 animate-fade-up">
-            <p className="text-[13px] font-semibold text-primary">{p.dateLine}</p>
-            <h1 className="mt-1.5 text-[34px] leading-[1.05] font-bold tracking-[-0.03em] [font-family:var(--font-display)]">
-              <span className="block text-muted">{p.greeting},</span>
-              {firstName || "ברוכים הבאים"}
+            <p className="text-[13px] font-medium text-muted">{p.dateLine}</p>
+            <h1 className="mt-2">
+              <span className="block text-[17px] font-medium text-muted">{p.greeting},</span>
+              <span className="relative inline-block text-[46px] leading-[1] font-bold tracking-[-0.01em] [font-family:var(--font-display)]">
+                {firstName || "ברוכים הבאים"}
+                {/* a quick pen underline */}
+                <svg viewBox="0 0 120 10" preserveAspectRatio="none" className="absolute -bottom-2 start-0 h-2.5 w-full text-[var(--peach)]" aria-hidden>
+                  <path d="M2 6.5C30 2.5 70 2 118 5" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
+                </svg>
+              </span>
             </h1>
           </div>
           <Link href="/household/settings" className="mb-1 flex shrink-0 -space-x-2.5 space-x-reverse" aria-label="חברי הבית">
