@@ -10,7 +10,7 @@ export interface HubLink {
   hue: number;
 }
 
-/** The three everyday entry cards. */
+/** The three everyday modules. */
 export const HUB_MAIN = {
   inventory: { href: "/inventory", label: "מלאי הבית", emoji: "📦", hue: 55 },
   chores: { href: "/chores", label: "משימות", emoji: "🧺", hue: 150 },

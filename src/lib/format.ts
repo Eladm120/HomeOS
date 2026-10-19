@@ -107,3 +107,10 @@ export function zonedToIso(local: string, timeZone = TIMEZONE): string {
   const shown = Date.parse(`${g("year")}-${g("month")}-${g("day")}T${g("hour")}:${g("minute")}:00Z`);
   return new Date(guess.getTime() - (shown - guess.getTime())).toISOString();
 }
+
+/** YYYY-MM-DD plus whole years (29 Feb → 28 Feb). */
+export function addYears(date: string, years: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const last = new Date(Date.UTC(y + years, m, 0)).getUTCDate();
+  return `${y + years}-${String(m).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}`;
+}

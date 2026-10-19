@@ -199,3 +199,105 @@ export function draftFromCaption(caption: string, sourceUrl: string, title: stri
       : "מהסרטון אפשר לשמור רק את הקישור והתיאור. הוסיפו מצרכים והוראות בעצמכם.",
   };
 }
+
+// ---- Social posts: read the public caption ----------------------------------------
+
+/** Like clean(), but keeps line breaks — captions list one ingredient per line. */
+function cleanLines(s: string, max = 20000): string {
+  return decodeEntities(s.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, ""))
+    .split("\n")
+    .map((l) => l.replace(/[ \t ]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, max);
+}
+
+/** instagram.com/p/…, /reel/…, /tv/… (also with a username prefix) → the public embed page that carries the caption. */
+export function instagramEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (!u.hostname.replace(/^www\./, "").endsWith("instagram.com")) return null;
+    const m = u.pathname.match(/\/(p|reel|reels|tv)\/([A-Za-z0-9_-]{5,})/);
+    if (!m) return null;
+    const kind = m[1] === "reels" ? "reel" : m[1];
+    return `https://www.instagram.com/${kind}/${m[2]}/embed/captioned/`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Instagram's embed page (the one sites use to show a post) includes the
+ * caption, the author and a cover image. Two layouts are handled: the JSON
+ * blob the page boots from, and the rendered caption block.
+ */
+export function parseInstagramEmbed(html: string): { caption: string | null; author: string | null; image: string | null } {
+  let caption: string | null = null;
+  let author: string | null = null;
+
+  const ctx = html.match(/"contextJSON"\s*:\s*("(?:[^"\\]|\\.)*")/)?.[1];
+  if (ctx) {
+    try {
+      const data = JSON.parse(JSON.parse(ctx) as string) as Record<string, unknown>;
+      const media = ((data.context as Record<string, unknown> | undefined)?.media ?? (data.gql_data as Record<string, unknown> | undefined)?.shortcode_media) as
+        | { edge_media_to_caption?: { edges?: { node?: { text?: string } }[] }; owner?: { username?: string } }
+        | undefined;
+      caption = media?.edge_media_to_caption?.edges?.[0]?.node?.text?.trim() || null;
+      author = media?.owner?.username ?? null;
+      const ctxObj = data.context as { caption?: string; username?: string } | undefined;
+      caption ??= ctxObj?.caption?.trim() || null;
+      author ??= ctxObj?.username ?? null;
+    } catch {
+      /* fall through to the rendered block */
+    }
+  }
+
+  if (!caption) {
+    const block = html.match(/<div[^>]+class=["'][^"']*\bCaption\b[^"']*["'][^>]*>([\s\S]*?)<div[^>]+class=["'][^"']*CaptionComments/i)?.[1]
+      ?? html.match(/<div[^>]+class=["'][^"']*\bCaption\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1];
+    if (block) {
+      author ??= clean(block.match(/<a[^>]+class=["'][^"']*CaptionUsername[^"']*["'][^>]*>([\s\S]*?)<\/a>/i)?.[1] ?? "", 60);
+      const text = cleanLines(block.replace(/<a[^>]+class=["'][^"']*CaptionUsername[^"']*["'][^>]*>[\s\S]*?<\/a>/i, ""));
+      caption = text || null;
+    }
+  }
+
+  const img = html.match(/<img[^>]+class=["'][^"']*EmbeddedMediaImage[^"']*["'][^>]*>/i)?.[0]?.match(/src=["']([^"']+)["']/i)?.[1];
+  const image = img ? decodeEntities(img) : null;
+  return { caption, author, image: image?.startsWith("https://") ? image : null };
+}
+
+/**
+ * Link-preview description of a post: `123 likes, 4 comments - user on May 1, 2026: "caption…"`.
+ * Returns just the caption part (or the whole text when it has no prefix).
+ */
+export function captionFromPreview(description: string | null): string | null {
+  if (!description) return null;
+  const m = description.match(/^[^:]{0,160}?:\s*["“]([\s\S]*)["”]\.?\s*$/);
+  const text = (m ? m[1] : description).trim();
+  return text || null;
+}
+
+/** YouTube watch pages embed the full description in their boot JSON. */
+export function parseYoutubeDescription(html: string): string | null {
+  const raw = html.match(/"shortDescription"\s*:\s*("(?:[^"\\]|\\.)*")/)?.[1];
+  if (!raw) return null;
+  try {
+    return (JSON.parse(raw) as string).trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Read a social post's og: tags (served to link-preview crawlers). */
+export function previewMeta(html: string): { title: string | null; description: string | null; image: string | null } {
+  const image = metaContent(html, "og:image");
+  const tag = html.match(/<meta[^>]+(?:property|name)=["']og:description["'][^>]*>/i)?.[0];
+  const description = tag?.match(/content=["']([^"']*)["']/i)?.[1];
+  return {
+    title: metaContent(html, "og:title"),
+    description: description ? cleanLines(description) || null : null,
+    image: image?.startsWith("https://") ? image : null,
+  };
+}

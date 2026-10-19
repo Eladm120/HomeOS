@@ -2,14 +2,26 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import type { ActionResult, Recipe } from "@/lib/types";
+import type { ActionResult, Recipe, RecipeSource } from "@/lib/types";
 import { flattenZodError } from "@/lib/validation";
 import { recipeSchema, type RecipeInput } from "@/lib/schemas";
 import { ingredientKey } from "@/lib/ingredients";
-import { detectPlatform, draftFromCaption, parseRecipeHtml, type RecipeDraft } from "@/lib/recipe-parse";
+import {
+  captionFromPreview,
+  detectPlatform,
+  draftFromCaption,
+  instagramEmbedUrl,
+  parseInstagramEmbed,
+  parseRecipeHtml,
+  parseYoutubeDescription,
+  previewMeta,
+  type RecipeDraft,
+} from "@/lib/recipe-parse";
 import { assertOwnPath, dbFail, fail, ok, withHousehold } from "@/server/action-utils";
 import { addItemsToDefaultList, type NewListItem } from "@/server/grocery-bulk";
-import { safeFetchText } from "@/server/safe-fetch";
+import { PREVIEW_USER_AGENT, safeFetchText } from "@/server/safe-fetch";
+import { aiConfigured } from "@/server/ai/client";
+import { aiRecipeDraft } from "@/server/ai/recipe";
 import { log } from "@/server/log";
 
 const uuid = z.uuid();
@@ -150,42 +162,91 @@ async function fetchOEmbed(endpoint: string): Promise<{ title?: string; thumbnai
   }
 }
 
+/** A social post's public text: caption, author and cover image. */
+interface PostText {
+  caption: string | null;
+  title: string | null;
+  image: string | null;
+}
+
+async function instagramPost(source: string): Promise<PostText> {
+  // 1) The public embed page (what websites use to show a post) carries the caption.
+  const embed = instagramEmbedUrl(source);
+  if (embed) {
+    try {
+      const page = await safeFetchText(embed, "text/html");
+      const e = parseInstagramEmbed(page.text);
+      if (e.caption) return { caption: e.caption, title: e.author ? `מתכון של ${e.author}` : null, image: e.image };
+    } catch (err) {
+      log.warn("recipes.instagram_embed_failed", { message: (err as Error).message });
+    }
+  }
+  // 2) The link-preview tags it publishes for sharing.
+  return previewPost(source);
+}
+
+async function previewPost(source: string): Promise<PostText> {
+  try {
+    const page = await safeFetchText(source, "text/html", PREVIEW_USER_AGENT);
+    const m = previewMeta(page.text);
+    return { caption: captionFromPreview(m.description), title: null, image: m.image };
+  } catch (err) {
+    log.warn("recipes.preview_failed", { message: (err as Error).message });
+    return { caption: null, title: null, image: null };
+  }
+}
+
+async function youtubePost(source: string): Promise<PostText> {
+  const o = await fetchOEmbed(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(source)}`);
+  let caption: string | null = null;
+  try {
+    const page = await safeFetchText(source, "text/html");
+    caption = parseYoutubeDescription(page.text);
+  } catch {
+    /* the title alone still helps */
+  }
+  return { caption, title: o?.title ?? null, image: o?.thumbnail_url ?? null };
+}
+
+async function tiktokPost(source: string): Promise<PostText> {
+  const o = await fetchOEmbed(`https://www.tiktok.com/oembed?url=${encodeURIComponent(source)}`);
+  return { caption: o?.title ?? null, title: o?.author_name ? `מתכון של ${o.author_name}` : null, image: o?.thumbnail_url ?? null };
+}
+
+const PLATFORM_NAME: Partial<Record<RecipeSource, string>> = { instagram: "מאינסטגרם", facebook: "מפייסבוק", tiktok: "מטיקטוק", youtube: "מיוטיוב" };
+
 /**
- * Turn a pasted link into a recipe draft for review. Never saves by itself.
- * Websites: schema.org Recipe / Open Graph. TikTok & YouTube: public oEmbed
- * (title/caption + thumbnail). Instagram & Facebook expose no public recipe
- * data, so only the link is kept — we never try to get around a login wall.
+ * Turn a pasted (or shared) link into a recipe draft for review. Never saves by itself.
+ * Websites: schema.org Recipe / Open Graph. Social posts: the public caption
+ * (Instagram's embed page, TikTok/YouTube oEmbed and description, link-preview
+ * tags), then — when AI is set up — the caption is read into ingredients and
+ * steps. Nothing behind a login is touched.
  */
 export async function importRecipeFromUrl(url: string): Promise<ActionResult<RecipeDraft>> {
   const parsed = z.string().trim().url().max(2000).safeParse(url);
   if (!parsed.success) return fail("קישור לא תקין");
-  return withHousehold(async () => {
+  return withHousehold(async (ctx, supabase) => {
     const source = parsed.data;
     const platform = detectPlatform(source);
     try {
-      if (platform === "tiktok") {
-        const o = await fetchOEmbed(`https://www.tiktok.com/oembed?url=${encodeURIComponent(source)}`);
-        return ok(draftFromCaption(o?.title ?? "", source, o?.author_name ? `מתכון של ${o.author_name}` : null, o?.thumbnail_url ?? null));
-      }
-      if (platform === "youtube") {
-        const o = await fetchOEmbed(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(source)}`);
-        return ok(draftFromCaption("", source, o?.title ?? null, o?.thumbnail_url ?? null));
-      }
-      if (platform === "instagram" || platform === "facebook") {
-        return ok({
-          title: platform === "instagram" ? "מתכון מאינסטגרם" : "מתכון מפייסבוק",
-          description: null,
-          image_url: null,
-          source_url: source,
-          source_platform: platform,
-          prep_minutes: null,
-          cook_minutes: null,
-          servings: null,
-          ingredients: [],
-          steps: [],
-          completeness: "link-only",
-          notice: "הפלטפורמה לא מאפשרת לקרוא את הפוסט. שמרנו את הקישור — הדביקו את תיאור הפוסט או הוסיפו מצרכים בעצמכם.",
-        });
+      if (platform !== "website" && platform !== "other") {
+        const post =
+          platform === "instagram" ? await instagramPost(source) : platform === "youtube" ? await youtubePost(source) : platform === "tiktok" ? await tiktokPost(source) : await previewPost(source);
+        const fallbackTitle = post.title ?? `מתכון ${PLATFORM_NAME[platform] ?? "מקישור"}`;
+        if (!post.caption) {
+          return ok({
+            ...draftFromCaption("", source, fallbackTitle, post.image),
+            notice: "לא הצלחנו לקרוא את תיאור הפוסט (ייתכן שהוא פרטי). שמרנו את הקישור — הדביקו את התיאור או צלמו מסך.",
+          });
+        }
+        if (aiConfigured()) {
+          try {
+            return ok(await aiRecipeDraft({ supabase, householdId: ctx.household.id, text: post.caption, sourceUrl: source, imageUrl: post.image, fallbackTitle }));
+          } catch (err) {
+            log.warn("recipes.import_ai_failed", { platform, message: (err as Error).message });
+          }
+        }
+        return ok(draftFromCaption(post.caption, source, fallbackTitle, post.image));
       }
       const page = await safeFetchText(source);
       return ok(parseRecipeHtml(page.text, page.url));

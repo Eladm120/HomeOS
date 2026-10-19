@@ -10,7 +10,7 @@ import { matchInventory } from "@/lib/grocery";
 import { formatQuantity } from "@/lib/format";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/card";
+import { ProductCombobox } from "@/components/ui/product-combobox";
 
 export interface InventoryOption {
   id: string;
@@ -108,20 +108,14 @@ export function FinishTripSheet({
               </span>
             </label>
             {r.include && (
-              <div className="mt-2 flex items-center gap-2 ps-8">
-                <select
-                  aria-label="מוצר במלאי"
-                  value={r.inventoryId ?? ""}
-                  onChange={(e) => update(r.item.id, { inventoryId: e.target.value || null })}
-                  className="h-9 min-w-0 flex-1 rounded-xl border border-border bg-surface px-2 text-sm"
-                >
-                  <option value="">+ מוצר חדש במלאי</option>
-                  {inventory.map((inv) => (
-                    <option key={inv.id} value={inv.id}>
-                      {inv.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="mt-2 flex items-start gap-2 ps-8">
+                <ProductCombobox
+                  label={`מוצר במלאי עבור ${r.item.name}`}
+                  options={inventory}
+                  value={r.inventoryId}
+                  initialQuery={r.item.name}
+                  onChange={(id) => update(r.item.id, { inventoryId: id })}
+                />
                 <input
                   aria-label="כמות שנכנסת למלאי"
                   inputMode="decimal"
@@ -132,7 +126,6 @@ export function FinishTripSheet({
                   }}
                   className="num h-9 w-16 rounded-xl border border-border bg-surface text-center text-sm"
                 />
-                {!r.inventoryId && <Badge tone="sky">חדש</Badge>}
               </div>
             )}
           </li>

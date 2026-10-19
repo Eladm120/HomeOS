@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysUntil, formatQuantity, greetingFor, joinHebrewNames, relativeDays, todayInZone, zonedToIso } from "@/lib/format";
+import { addYears, daysUntil, formatQuantity, greetingFor, joinHebrewNames, relativeDays, todayInZone, zonedToIso } from "@/lib/format";
 
 describe("greetingFor", () => {
   // 2026-01-15 is winter time in Israel (UTC+2)
@@ -71,5 +71,12 @@ describe("zonedToIso", () => {
   it("handles Israel summer and winter time", () => {
     expect(zonedToIso("2026-07-01T10:00", "Asia/Jerusalem")).toBe("2026-07-01T07:00:00.000Z");
     expect(zonedToIso("2026-12-01T10:00", "Asia/Jerusalem")).toBe("2026-12-01T08:00:00.000Z");
+  });
+});
+
+describe("addYears", () => {
+  it("adds whole years and clamps 29 Feb", () => {
+    expect(addYears("2026-10-18", 2)).toBe("2028-10-18");
+    expect(addYears("2028-02-29", 1)).toBe("2029-02-28");
   });
 });
