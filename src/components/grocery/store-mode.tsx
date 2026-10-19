@@ -8,6 +8,7 @@ import { categoryStyle } from "@/lib/category-style";
 import { formatQuantityWithUnit } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ProductThumb } from "./item-row";
+import { Emoji3D } from "@/components/ui/emoji-3d";
 
 /**
  * Supermarket mode: full screen, one hand, nothing but the shopping. Big rows
@@ -164,44 +165,51 @@ export function StoreMode({
                 className="scroll-mt-4"
                 aria-label={g.name}
               >
-                <h2 className="mb-2 flex items-center gap-2.5 px-1">
-                  <span aria-hidden className="cat-tint grid size-9 place-items-center rounded-xl text-[19px]" style={{ "--h": style.hue } as React.CSSProperties}>
-                    {style.emoji}
-                  </span>
-                  <span className="text-[19px] font-bold [font-family:var(--font-display)]">{g.name}</span>
-                  <span className="num text-[14px] text-muted">{g.left ? `${g.left} נשארו` : "הושלם"}</span>
+                <h2 className="mb-2.5 flex items-center gap-2.5 px-1">
+                  <Emoji3D emoji={style.emoji} className="size-8 text-[22px]" />
+                  <span className="text-[21px] font-bold [font-family:var(--font-display)]">{g.name}</span>
+                  <span className="num text-[15px] text-muted">{g.left || "✓"}</span>
+                  <span className="flex-1" />
+                  {g.left > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => g.items.filter((i) => i.status === "pending").forEach(onToggle)}
+                      className="pressable h-9 rounded-xl bg-sage px-3.5 text-[14px] font-bold text-white dark:text-[var(--accent-ink)]"
+                    >
+                      קיבלתי הכל
+                    </button>
+                  )}
                 </h2>
-                <ul className="space-y-2">
+                <ul className="space-y-2.5">
                   {g.items.map((it) => {
                     const inCart = it.status !== "pending";
-                    const meta = [it.brand && `מותג: ${it.brand}`, it.variant, it.notes].filter(Boolean).join(" · ");
+                    const meta = [g.name, it.brand, it.variant, it.notes].filter(Boolean).join(" · ");
                     return (
-                      <li key={it.id}>
+                      <li key={it.id} className={cn("card flex min-h-[92px] items-center gap-3 p-3 ps-3.5 transition-all duration-300", inCart && "opacity-55")}>
+                        <ProductThumb name={it.name} imagePath={it.image_path} category={category} dim={inCart} className="size-14 rounded-2xl bg-transparent text-[36px]" />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2">
+                            <span className={cn("truncate text-[20px] leading-tight font-semibold", inCart && "line-through decoration-2")}>{it.name}</span>
+                            {it.priority === "high" && !inCart && <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">דחוף</span>}
+                          </span>
+                          {meta && <span className="mt-0.5 block truncate text-[14px] text-muted">{meta}</span>}
+                        </span>
+                        <span className="num grid h-9 min-w-9 shrink-0 place-items-center rounded-full bg-fill px-2.5 text-[16px] font-bold">{formatQuantityWithUnit(it.quantity, it.unit)}</span>
                         <button
                           type="button"
                           role="checkbox"
                           aria-checked={inCart}
+                          aria-label={inCart ? `החזרת ${it.name} לרשימה` : `${it.name} בעגלה`}
                           onClick={() => {
                             if (navigator.vibrate) navigator.vibrate(10);
                             onToggle(it);
                           }}
-                          className={cn("card flex min-h-[84px] w-full items-center gap-3.5 p-3 text-start transition-all duration-300 active:scale-[0.98]", inCart && "opacity-55")}
+                          className={cn(
+                            "pressable grid size-[66px] shrink-0 place-items-center rounded-2xl text-[16px] font-black transition-colors",
+                            inCart ? "bg-fill text-muted" : "bg-sage text-white dark:text-[var(--accent-ink)]",
+                          )}
                         >
-                          <span
-                            className={cn(
-                              "grid size-11 shrink-0 place-items-center rounded-full transition-all duration-300",
-                              inCart ? "bg-primary text-primary-foreground" : "shadow-[inset_0_0_0_2.5px_var(--muted-2)]",
-                            )}
-                          >
-                            {inCart && <Check className="size-6 animate-pop" strokeWidth={3.25} />}
-                          </span>
-                          <ProductThumb name={it.name} imagePath={it.image_path} category={category} dim={inCart} className="size-[60px] rounded-[18px] text-[32px]" />
-                          <span className="min-w-0 flex-1">
-                            <span className={cn("block text-[20px] leading-tight font-semibold", inCart && "line-through decoration-2")}>{it.name}</span>
-                            <span className="num mt-1 block text-[15px] font-medium text-primary">{formatQuantityWithUnit(it.quantity, it.unit)}</span>
-                            {meta && <span className="mt-0.5 block truncate text-[13px] text-muted">{meta}</span>}
-                          </span>
-                          {it.priority === "high" && !inCart && <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-[12px] font-bold text-danger">דחוף</span>}
+                          {inCart ? <Check className="size-7 animate-pop" strokeWidth={3} /> : "יש!"}
                         </button>
                       </li>
                     );

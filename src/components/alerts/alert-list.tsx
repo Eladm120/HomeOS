@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useRouter } from "next/navigation";
 import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -43,7 +44,7 @@ export function AlertList({ alerts, preview, className }: { alerts: AlertItem[];
               className="cat-tint relative grid size-11 shrink-0 place-items-center rounded-2xl text-[22px]"
               style={{ "--h": a.hue } as React.CSSProperties}
             >
-              {a.emoji}
+              <Emoji3D emoji={a.emoji} className="size-8" />
               {a.urgency === "now" && !a.handled && <span className="absolute -top-0.5 -end-0.5 size-3 rounded-full bg-terracotta ring-2 ring-surface" />}
             </span>
             <span className="min-w-0 flex-1">

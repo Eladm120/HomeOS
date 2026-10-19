@@ -7,6 +7,7 @@ import { formatQuantityWithUnit } from "@/lib/format";
 import { categoryStyle, productEmoji } from "@/lib/category-style";
 import { cn } from "@/lib/utils";
 import { ImageViewer, SignedImage } from "@/components/media/signed-image";
+import { Emoji3D } from "@/components/ui/emoji-3d";
 
 /** Round checkbox; the check mark pops in when it is ticked. */
 export function CheckCircle({
@@ -77,7 +78,7 @@ export function ProductThumb({
   }
   return (
     <span aria-hidden className={cn("cat-tint grid place-items-center text-[24px] leading-none", base)} style={{ "--h": style.hue } as React.CSSProperties}>
-      {productEmoji(name, category)}
+      <Emoji3D emoji={productEmoji(name, category)} className="size-[82%]" />
     </span>
   );
 }

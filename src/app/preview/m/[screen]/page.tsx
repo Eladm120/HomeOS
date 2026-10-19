@@ -16,6 +16,7 @@ import { SmartHomeView } from "@/components/smart-home/smart-home-view";
 import { IntegrationsView } from "@/components/settings/integrations-view";
 import { AssistantView } from "@/components/assistant/assistant-view";
 import { CalendarView } from "@/components/calendar/calendar-view";
+import { PlantsView } from "@/components/plants/plants-view";
 import type { UtilityBill } from "@/lib/types";
 import * as f from "../../fixtures-modules";
 
@@ -34,6 +35,24 @@ export default async function ModulePreviewPage({ params }: { params: Promise<{ 
   let content: React.ReactNode;
   let path = "/household";
   switch (screen) {
+    case "plants": {
+      const t = todayInZone();
+      const plant = (i: number, name: string, interval: number, last: number | null, light: "low" | "medium" | "bright" | "direct" | null, room: string | null) => ({
+        id: `00000000-0000-4000-8000-0000000p000${i}`.replace("p", "d"), household_id: HID, name, species: null, room_id: room, location_note: null, image_path: null,
+        watering_interval_days: interval, last_watered_on: last === null ? null : addDays(t, -last), light, notes: null, identified_by_ai: false, ai_confidence: null,
+      });
+      const rooms = [{ id: "00000000-0000-4000-8000-0000000000e1", household_id: HID, name: "סלון", sort_order: 1 }];
+      content = (
+        <PlantsView
+          householdId={HID}
+          rooms={rooms as never}
+          signedUrls={{}}
+          aiEnabled
+          plants={[plant(1, "מונסטרה", 7, 9, "bright", rooms[0].id), plant(2, "קקטוס", 14, 3, "direct", null), plant(3, "בזיליקום", 2, 1, "bright", null), plant(4, "סחלב", 7, 0, "medium", null), plant(5, "פיקוס כינורי", 10, 4, "bright", rooms[0].id)]}
+        />
+      );
+      break;
+    }
     case "planner":
       content = <PlannerView householdId={HID} purchases={f.purchases} rooms={f.rooms} projects={f.projects} signedUrls={{}} />;
       break;

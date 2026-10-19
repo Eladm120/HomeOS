@@ -130,3 +130,7 @@ Optional server variables (each enables one feature; see `.env.example`):
 | `npm run typecheck` | TypeScript |
 | `npm run lint` | ESLint |
 | `npm run icons` | Regenerate PWA icons |
+
+## Credits
+
+Product, category and plant illustrations in `public/fluent/` are [Fluent Emoji](https://github.com/microsoft/fluentui-emoji) 3D assets by Microsoft, used under the MIT licence (resized to 192px WebP).

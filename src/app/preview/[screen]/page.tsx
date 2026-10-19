@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { Dashboard } from "@/components/dashboard/dashboard";
 import { GroceryView } from "@/components/grocery/grocery-view";
+import { CatalogView } from "@/components/grocery/catalog-view";
+import { buildCatalog } from "@/lib/catalog";
 import { InventoryView } from "@/components/inventory/inventory-view";
 import { BottomNav, Sidebar } from "@/components/layout/app-nav";
 import { buildAlerts } from "@/lib/alerts";
@@ -85,6 +87,19 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
         />
       );
       break;
+    case "catalog": {
+      path = "/shopping";
+      const past = (name: string, catIdx: number, times: number, brand: string | null = null) =>
+        Array.from({ length: times }, (_, k) => ({ name, brand, unit: "יח׳", quantity: 1, category_id: categories[catIdx]?.id ?? null, image_path: null, catalog_product_id: null, status: "purchased", cleared_at: "2026-10-01T00:00:00Z", created_at: `2026-09-${String(10 + k).padStart(2, "0")}T00:00:00Z` }));
+      const history = [
+        ...groceries.map((g) => ({ ...g, quantity: Number(g.quantity) })),
+        ...past("חלב", 1, 9, "תנובה"), ...past("ביצים", 1, 7), ...past("לחם מחמצת", 3, 6), ...past("עגבניות שרי", 0, 6), ...past("בננות", 0, 5),
+        ...past("קפה", 5, 4, "עלית"), ...past("גבינה צהובה", 1, 4), ...past("פסטה פנה", 5, 3, "ברילה"), ...past("חזה עוף", 2, 3), ...past("שוקולד", 5, 2),
+        ...past("נייר טואלט", 7, 2), ...past("תפוחים", 0, 2), ...past("מים מינרליים", 6, 2), ...past("אבקת כביסה", 7, 1),
+      ];
+      content = <CatalogView preview householdName="הבית של אלעד ונעה" categories={categories} signedUrls={{}} entries={buildCatalog({ catalog: [], history, lowNames: ["ביצים", "קפה"] })} />;
+      break;
+    }
     case "inventory":
       path = "/inventory";
       content = <InventoryView householdId={HID} items={inventory} locations={locations} categories={categories} signedUrls={{}} />;

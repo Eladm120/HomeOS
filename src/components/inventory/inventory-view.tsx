@@ -15,10 +15,12 @@ import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { useOpenFromQuery } from "@/hooks/use-open-from-query";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge, Card, EmptyState } from "@/components/ui/card";
+import { Card, EmptyState } from "@/components/ui/card";
 import { Segmented } from "@/components/ui/field";
 import { SignedImage } from "@/components/media/signed-image";
 import { InventoryItemSheet } from "./inventory-item-sheet";
+import { Emoji3D } from "@/components/ui/emoji-3d";
+import { productEmoji } from "@/lib/category-style";
 
 type Filter = "all" | "low" | "expiring";
 
@@ -178,67 +180,67 @@ export function InventoryView({
           {filtered.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">אין מוצרים שמתאימים לסינון</p>
           ) : (
-            <Card className="hairline-list-inset [--separator-inset:4.5rem]">
+            <div className="grid grid-cols-3 gap-2.5 lg:grid-cols-5">
               {filtered.map((item) => {
                 const level = stockLevel(item);
                 const exp = expiryState(item.expires_on);
+                const cat = categories.find((c) => c.id === item.category_id) ?? null;
+                // Border = state at a glance: red gone/expired, amber low/expiring, green fine.
+                const tone = level === "out" || exp?.state === "expired" ? "danger" : level === "low" || exp?.state === "soon" ? "amber" : "ok";
                 return (
-                  <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
-                    <Link href={`/inventory/${item.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-                      {item.image_path ? (
-                        <SignedImage path={item.image_path} alt={item.name} className="size-11 shrink-0 rounded-[12px]" />
-                      ) : (
-                        <div className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-fill text-[17px] font-semibold text-muted">{item.name.slice(0, 1)}</div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[17px]">{item.name}</div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                          {locName(item.location_id) && <span>{locName(item.location_id)}</span>}
-                          {item.min_threshold != null ? (
-                            <span className="num">מינימום {formatQuantity(item.min_threshold)}</span>
-                          ) : (
-                            <span className="text-muted-2">בלי מינימום</span>
-                          )}
-                          {level === "out" && <Badge tone="danger">נגמר</Badge>}
-                          {level === "low" && <Badge tone="amber">נמוך</Badge>}
-                          {exp?.state === "expired" && <Badge tone="danger">פג תוקף</Badge>}
-                          {exp?.state === "soon" && <Badge tone="amber">תוקף {relativeDays(exp.days)}</Badge>}
-                          {item.stock_confidence === "estimated" && <Badge>משוער</Badge>}
-                        </div>
-                      </div>
-                    </Link>
-                    {level !== "ok" && (
-                      <Button size="icon-sm" variant="soft" aria-label={`הוספת ${item.name} לרשימת הקניות`} onClick={() => toList(item)}>
-                        <ShoppingCart />
-                      </Button>
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "relative flex flex-col rounded-[1.125rem] border-2 bg-surface p-2 pb-2.5 shadow-[var(--card-shadow)]",
+                      tone === "danger" ? "border-danger/70" : tone === "amber" ? "border-amber/70" : "border-sage/60",
                     )}
-                    <div className="flex shrink-0 items-center rounded-full bg-fill">
+                  >
+                    {level !== "ok" && (
+                      <button type="button" onClick={() => toList(item)} aria-label={`הוספת ${item.name} לרשימת הקניות`} className="absolute top-1.5 end-1.5 z-10 grid size-7 place-items-center rounded-full bg-primary-soft text-primary">
+                        <ShoppingCart className="size-3.5" />
+                      </button>
+                    )}
+                    <Link href={`/inventory/${item.id}`} className="flex min-w-0 flex-1 flex-col">
+                      <span className="grid h-[72px] place-items-center">
+                        {item.image_path ? (
+                          <SignedImage path={item.image_path} alt={item.name} className="size-[68px] rounded-xl object-cover" />
+                        ) : (
+                          <Emoji3D emoji={productEmoji(item.name, cat)} className="size-[64px] text-[44px]" />
+                        )}
+                      </span>
+                      <span className="mt-1.5 truncate px-0.5 text-[14px] leading-tight font-bold">{item.name}</span>
+                      <span className="num truncate px-0.5 text-[11.5px] text-foreground/80">
+                        כמות: {formatQuantity(item.quantity)} {item.unit}
+                        {item.stock_confidence === "estimated" ? " ~" : ""}
+                      </span>
+                      <span className={cn("truncate px-0.5 text-[11.5px]", exp && exp.state !== "ok" ? "font-semibold text-danger" : level === "out" ? "font-semibold text-danger" : "text-foreground/80")}>
+                        {exp ? (exp.state === "expired" ? "פג תוקף" : `תוקף: ${relativeDays(exp.days)}`) : level === "out" ? "נגמר" : (locName(item.location_id) ?? "\u00a0")}
+                      </span>
+                    </Link>
+                    <div className="mt-1.5 flex h-7 items-center justify-between rounded-full bg-fill px-0.5">
                       <button
                         type="button"
                         onClick={() => quickMove(item, "consume")}
                         disabled={Number(item.quantity) <= 0}
-                        className="grid size-9 place-items-center rounded-full text-muted transition hover:text-foreground active:scale-90 disabled:opacity-30"
+                        className="grid size-6 place-items-center rounded-full active:scale-90 disabled:opacity-30"
                         aria-label={`השתמשנו ב-1 ${item.unit} ${item.name}`}
                       >
-                        <Minus className="size-4" />
+                        <Minus className="size-3.5" />
                       </button>
-                      <span className="num min-w-12 text-center text-sm font-semibold">
-                        {formatQuantity(item.quantity)}
-                        <span className="ms-0.5 text-[10px] font-normal text-muted">{item.unit}</span>
-                      </span>
+                      <span className="h-3.5 w-px bg-border" aria-hidden />
                       <button
                         type="button"
                         onClick={() => quickMove(item, "add")}
-                        className="grid size-9 place-items-center rounded-full text-muted transition hover:text-foreground active:scale-90"
+                        className="grid size-6 place-items-center rounded-full active:scale-90"
                         aria-label={`הוספת 1 ${item.unit} ${item.name}`}
                       >
-                        <Plus className="size-4" />
+                        <Plus className="size-3.5" />
                       </button>
                     </div>
                   </div>
                 );
               })}
-            </Card>
+            </div>
           )}
         </>
       )}

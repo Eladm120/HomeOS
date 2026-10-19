@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Droplets, Leaf, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Check, Droplets, Leaf, Loader2, Search, Sparkles, Sun, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { addPlantCare, deletePlant, identifyPlant, savePlant, waterPlant } from "@/server/actions/admin";
 import type { Plant, PlantCareEvent, Room } from "@/lib/types";
@@ -13,13 +13,14 @@ import { primeSignedUrls } from "@/lib/media";
 import { useOpenFromQuery } from "@/hooks/use-open-from-query";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge, EmptyState } from "@/components/ui/card";
+import { Badge } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ConfirmSheet, Sheet } from "@/components/ui/sheet";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { AddButton, Panel, PanelHeading } from "@/components/ui/panel";
 import { PhotoPicker } from "@/components/media/photo-picker";
 import { SignedImage } from "@/components/media/signed-image";
+import { Emoji3D } from "@/components/ui/emoji-3d";
 
 export function nextWatering(p: Pick<Plant, "last_watered_on" | "watering_interval_days">): string {
   return p.last_watered_on ? addDays(p.last_watered_on, p.watering_interval_days) : todayInZone();
@@ -31,14 +32,57 @@ function WaterBadge({ p }: { p: Plant }) {
   return <Badge>השקיה {relativeDays(d)}</Badge>;
 }
 
+/** A 3D picture that fits the plant until the household photographs it. */
+export function plantEmoji(p: Pick<Plant, "name" | "species">): string {
+  const t = `${p.name} ${p.species ?? ""}`;
+  if (/קקטוס|סוקולנט|אלוורה|cact|succul|aloe/i.test(t)) return "🌵";
+  if (/בזיליקום|נענע|רוזמרין|תבלין|פטרוזיליה|כוסברה|basil|mint|herb/i.test(t)) return "🌿";
+  if (/סחלב|ורד|פרח|טוליפ|orchid|rose|tulip/i.test(t)) return "🌷";
+  if (/חמני|sunflower/i.test(t)) return "🌻";
+  if (/דקל|palm/i.test(t)) return "🌴";
+  if (/פיקוס|עץ|ficus|tree/i.test(t)) return "🌳";
+  if (/נבט|שתיל|seed/i.test(t)) return "🌱";
+  return "🪴";
+}
+
+function PlantPicture({ p, className, emojiClass }: { p: Plant; className?: string; emojiClass?: string }) {
+  if (p.image_path) return <SignedImage path={p.image_path} alt={p.name} className={cn("object-cover", className)} />;
+  return (
+    <span className={cn("grid place-items-center", className)}>
+      <Emoji3D emoji={plantEmoji(p)} className={emojiClass} />
+    </span>
+  );
+}
+
+function wateredText(p: Plant): string {
+  if (!p.last_watered_on) return "עוד לא הושקה";
+  const d = -daysUntil(p.last_watered_on);
+  return d <= 0 ? "הושקה היום" : d === 1 ? "הושקה אתמול" : `הושקה לפני ${d} ימים`;
+}
+
+function nextText(p: Plant): string {
+  const d = daysUntil(nextWatering(p));
+  return d < 0 ? `צמא · ${relativeDays(d)}` : d === 0 ? "היום" : relativeDays(d);
+}
+
+/**
+ * Plants, like a plant-care app: the plant that needs you most as a big hero
+ * (picture, last watering, next watering, light), then every plant as a card
+ * with its picture and a green water button.
+ */
 export function PlantsView({ householdId, plants, rooms, signedUrls, aiEnabled }: { householdId: string; plants: Plant[]; rooms: Room[]; signedUrls: Record<string, string>; aiEnabled: boolean }) {
   useMemo(() => primeSignedUrls(signedUrls), [signedUrls]);
   const router = useRouter();
   const [sheet, setSheet] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   useOpenFromQuery(() => setSheet(true));
   const sorted = [...plants].sort((a, b) => nextWatering(a).localeCompare(nextWatering(b)));
   const thirsty = plants.filter((p) => daysUntil(nextWatering(p)) <= 0).length;
+  const shown = sorted.filter((p) => !query.trim() || `${p.name} ${p.species ?? ""}`.includes(query.trim()));
+  const hero = sorted[0];
+  const roomName = (id: string | null) => rooms.find((r) => r.id === id)?.name;
+  const today = todayInZone();
 
   async function water(p: Plant) {
     setBusy(p.id);
@@ -53,31 +97,92 @@ export function PlantsView({ householdId, plants, rooms, signedUrls, aiEnabled }
     <>
       <PageHeader title="צמחים" back={{ href: "/household", label: "משק הבית" }} subtitle={plants.length ? (thirsty ? `${thirsty} צריכים מים` : "כולם מושקים") : "השקיה ותזכורות"} actions={<AddButton onClick={() => setSheet(true)} label="צמח" />} />
       {plants.length === 0 ? (
-        <EmptyState icon={<Leaf />} title="עוד אין צמחים" description="צלמו צמח, HomeOS ינסה לזהות אותו ויציע כל כמה ימים להשקות." />
+        <div className="card flex flex-col items-center px-6 py-10 text-center">
+          <Emoji3D emoji="🪴" className="mb-3 size-24 text-[64px]" />
+          <p className="title-2">עוד אין צמחים</p>
+          <p className="mt-1 max-w-xs text-[14px] text-muted">צלמו צמח, HomeOS ינסה לזהות אותו ויציע כל כמה ימים להשקות.</p>
+          <Button className="mt-4" onClick={() => setSheet(true)}>
+            <Leaf /> הוספת צמח
+          </Button>
+        </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {sorted.map((p) => (
-            <div key={p.id} className="overflow-hidden rounded-[var(--radius)] border border-border bg-surface">
-              <Link href={`/plants/${p.id}`} className="block">
-                {p.image_path ? (
-                  <SignedImage path={p.image_path} alt={p.name} className="aspect-square w-full" />
-                ) : (
-                  <span className="cat-tint grid aspect-square w-full place-items-center text-[48px]" style={{ "--h": 140 } as React.CSSProperties}>
-                    🪴
-                  </span>
-                )}
+        <div className="space-y-5">
+          <label className="flex h-12 items-center gap-2.5 rounded-full bg-surface px-4 shadow-[var(--card-shadow)]">
+            <Search className="size-[18px] text-muted" />
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="חיפוש צמח" aria-label="חיפוש צמח" className="min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-muted" />
+          </label>
+
+          {hero && !query && (
+            <section aria-label={hero.name} className="relative isolate flex min-h-[200px] gap-3 overflow-hidden rounded-[1.75rem] bg-[linear-gradient(150deg,color-mix(in_oklab,var(--sage)_22%,var(--surface)),var(--surface)_70%)] p-3 shadow-[var(--card-shadow)]">
+              <Link href={`/plants/${hero.id}`} className="relative w-[46%] shrink-0 overflow-hidden rounded-[1.375rem]">
+                <PlantPicture p={hero} className="absolute inset-0 size-full" emojiClass="size-[88%] text-[90px]" />
               </Link>
-              <div className="space-y-2 p-3">
-                <Link href={`/plants/${p.id}`} className="block truncate font-semibold">
-                  {p.name}
-                </Link>
-                <WaterBadge p={p} />
-                <Button size="sm" variant="soft" className="w-full" onClick={() => water(p)} loading={busy === p.id} disabled={p.last_watered_on === todayInZone()}>
-                  <Droplets /> {p.last_watered_on === todayInZone() ? "הושקה היום" : "השקיתי"}
+              <div className="flex min-w-0 flex-1 flex-col gap-2 py-1">
+                <div>
+                  <Link href={`/plants/${hero.id}`} className="block truncate text-[19px] font-bold">
+                    {hero.name}
+                  </Link>
+                  <p className="text-[12.5px] text-muted">{wateredText(hero)}</p>
+                </div>
+                <div className="flex items-center gap-2 rounded-2xl bg-surface/80 p-2 shadow-[inset_0_0_0_0.5px_var(--border)]">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-sage text-white dark:text-[var(--accent-ink)]">
+                    <Droplets className="size-4" />
+                  </span>
+                  <span className="min-w-0 leading-tight">
+                    <span className="block text-[11.5px] text-muted">השקיה הבאה</span>
+                    <span className={cn("block truncate text-[14px] font-bold", daysUntil(nextWatering(hero)) <= 0 ? "text-terracotta" : "text-sage")}>{nextText(hero)}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 rounded-2xl bg-surface/80 p-2 shadow-[inset_0_0_0_0.5px_var(--border)]">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-fill">
+                    <Sun className="size-4" />
+                  </span>
+                  <span className="min-w-0 leading-tight">
+                    <span className="block text-[11.5px] text-muted">{roomName(hero.room_id) ?? "אור"}</span>
+                    <span className="block truncate text-[14px] font-bold">{hero.light ? LIGHT_LABEL[hero.light] : `כל ${hero.watering_interval_days} ימים`}</span>
+                  </span>
+                </div>
+                <Button size="sm" className="mt-auto" onClick={() => water(hero)} loading={busy === hero.id} disabled={hero.last_watered_on === today}>
+                  <Droplets /> {hero.last_watered_on === today ? "הושקה היום" : "השקיתי"}
                 </Button>
               </div>
+            </section>
+          )}
+
+          <section>
+            <h2 className="mb-2.5 px-1 text-[19px] font-bold">כל הצמחים</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {shown.map((p) => {
+                const due = daysUntil(nextWatering(p));
+                const done = p.last_watered_on === today;
+                return (
+                  <div key={p.id} className="card relative flex flex-col overflow-hidden rounded-[1.5rem] p-2.5">
+                    <span aria-hidden className={cn("absolute top-3.5 start-3.5 z-10 grid size-8 place-items-center rounded-full bg-surface/90 shadow-sm", due <= 0 ? "text-terracotta" : "text-sage")}>
+                      <Droplets className="size-4" />
+                    </span>
+                    <Link href={`/plants/${p.id}`} className="block">
+                      <PlantPicture p={p} className="aspect-[1/0.95] w-full rounded-[1.125rem] bg-[color-mix(in_oklab,var(--sage)_12%,var(--surface-2))]" emojiClass="size-[78%] text-[64px]" />
+                    </Link>
+                    <div className="flex items-end gap-2 px-1 pt-2.5">
+                      <Link href={`/plants/${p.id}`} className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-bold">{p.name}</span>
+                        <span className={cn("block truncate text-[12.5px]", due <= 0 ? "font-semibold text-terracotta" : "text-muted")}>{due <= 0 ? (due < 0 ? `צמא · ${relativeDays(due)}` : "להשקות היום") : `השקיה ${relativeDays(due)}`}</span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => water(p)}
+                        disabled={busy === p.id || done}
+                        aria-label={done ? `${p.name} הושקה היום` : `השקיתי את ${p.name}`}
+                        className={cn("pressable grid size-10 shrink-0 place-items-center rounded-[14px] transition-colors", done ? "bg-fill text-sage" : "bg-sage text-white dark:text-[var(--accent-ink)]")}
+                      >
+                        {busy === p.id ? <Loader2 className="size-[18px] animate-spin" /> : done ? <Check className="size-[18px]" strokeWidth={3} /> : <Leaf className="size-[18px]" />}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          </section>
         </div>
       )}
       <PlantSheet open={sheet} onOpenChange={setSheet} householdId={householdId} plant={null} rooms={rooms} aiEnabled={aiEnabled} />

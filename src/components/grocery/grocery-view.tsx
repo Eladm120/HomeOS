@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, Camera, CloudOff, ListTodo, PackageCheck, Plus, ShoppingCart, Sparkles, Store } from "lucide-react";
+import Link from "next/link";
+import { ArrowUp, Camera, CloudOff, LayoutGrid, ListTodo, PackageCheck, Plus, ShoppingCart, Sparkles, Store } from "lucide-react";
 import { toast } from "sonner";
 import { addShoppingItem, deleteShoppingItem, restoreShoppingItem } from "@/server/actions/grocery";
 import { useGroceryList, type SyncState } from "@/hooks/use-grocery-list";
@@ -20,6 +21,7 @@ import { GroceryItemSheet } from "./item-sheet";
 import { FinishTripSheet, type InventoryOption } from "./finish-trip-sheet";
 import { Highlight } from "@/components/ui/product-combobox";
 import { StoreMode } from "./store-mode";
+import { Emoji3D } from "@/components/ui/emoji-3d";
 
 export interface GroceryViewProps {
   householdId: string;
@@ -218,11 +220,16 @@ export function GroceryView(props: GroceryViewProps) {
         title="קניות"
         subtitle={<SyncBadge sync={sync} pendingOps={pendingOps} />}
         actions={
-          pending.length + done.length > 0 && (
-            <button type="button" onClick={() => setStore(true)} className="pressable flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[15px] font-semibold text-primary-foreground">
-              <Store className="size-[18px]" /> מצב סופר
-            </button>
-          )
+          <>
+            <Link href="/shopping/catalog" className="pressable flex h-10 items-center gap-1.5 rounded-full bg-surface px-4 text-[15px] font-semibold shadow-[var(--card-shadow)]">
+              <LayoutGrid className="size-[18px]" /> קטלוג
+            </Link>
+            {pending.length + done.length > 0 && (
+              <button type="button" onClick={() => setStore(true)} className="pressable flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[15px] font-semibold text-primary-foreground">
+                <Store className="size-[18px]" /> מצב סופר
+              </button>
+            )}
+          </>
         }
       />
 
@@ -286,7 +293,7 @@ export function GroceryView(props: GroceryViewProps) {
               >
                 <span className="flex items-start justify-between">
                   <span aria-hidden className="cat-tint grid size-11 place-items-center rounded-[14px] text-[24px]" style={{ "--h": categoryStyle(sg.category_id ? (catById.get(sg.category_id) ?? null) : null).hue } as React.CSSProperties}>
-                    {productEmoji(sg.name, sg.category_id ? catById.get(sg.category_id) : null)}
+                    <Emoji3D emoji={productEmoji(sg.name, sg.category_id ? catById.get(sg.category_id) : null)} className="size-9" />
                   </span>
                   <span className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground">
                     <Plus className="size-4" strokeWidth={2.75} />
@@ -324,9 +331,7 @@ export function GroceryView(props: GroceryViewProps) {
               return (
                 <section key={g.id ?? "none"} aria-label={g.name}>
                   <h2 className="mb-2 flex items-center gap-2.5 px-1">
-                    <span aria-hidden className="cat-tint grid size-8 place-items-center rounded-[10px] text-[17px] leading-none" style={{ "--h": style.hue } as React.CSSProperties}>
-                      {style.emoji}
-                    </span>
+                    <Emoji3D emoji={style.emoji} className="size-8 text-[20px]" />
                     <span className="text-[16px] font-semibold">{g.name}</span>
                     <span className="num cat-ink cat-tint grid h-6 min-w-6 place-items-center rounded-full px-2 text-[12px] font-bold" style={{ "--h": style.hue } as React.CSSProperties}>
                       {g.items.length}

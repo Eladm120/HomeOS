@@ -106,10 +106,11 @@ export async function addShoppingItem(
       return ok({ item: data as ShoppingListItem, merged: true });
     }
 
+    // Every product that ever enters the list is remembered in the household
+    // catalog (deduplicated by name + brand), so the supermarket catalog grows
+    // by itself.
     let catalogId = v.catalog_product_id;
-    if (!catalogId && v.save_to_catalog) {
-      catalogId = await upsertCatalogProduct(supabase, ctx, v);
-    }
+    if (!catalogId) catalogId = await upsertCatalogProduct(supabase, ctx, v);
 
     const { data, error } = await supabase
       .from("shopping_list_items")

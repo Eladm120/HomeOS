@@ -24,7 +24,8 @@ describe("GroceryItemRow", () => {
 
   it("shows a product picture when there is no photo", () => {
     const { container } = render(<GroceryItemRow item={base} category={dairy} checked={false} onToggle={() => {}} />);
-    expect(container.textContent).toContain("🥛");
+    // The milk picture is the bundled 3D illustration (🥛 = U+1F95B).
+    expect(container.querySelector('img[src="/fluent/1f95b.webp"]')).not.toBeNull();
   });
 
   it("toggles via the checkbox without opening the editor", () => {

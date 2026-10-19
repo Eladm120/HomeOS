@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useRouter } from "next/navigation";
 import { Check, ChefHat, ChevronLeft, ListChecks, Loader2, Moon, Package, ShoppingBasket, Sparkles, Sun, Sunrise, Sunset, UserPlus, X, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -71,7 +72,7 @@ export function BriefCard({ brief, chips, more = 0, greeting, preview }: { brief
           {insights.map((x) => (
             <li key={x.key} className={cn("hero-row flex items-center gap-3 p-2 ps-2.5 transition-opacity", busy === x.key && "opacity-50")}>
               <span aria-hidden className="grid size-9 shrink-0 place-items-center hero-well rounded-xl text-[17px]">
-                {x.emoji}
+                <Emoji3D emoji={x.emoji} className="size-7" />
               </span>
               <Link href={x.href} className="min-w-0 flex-1 active:opacity-60">
                 <span className="line-clamp-2 block text-[15px] leading-snug font-semibold">{x.text}</span>

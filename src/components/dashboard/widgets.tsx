@@ -24,6 +24,7 @@ import { RecipeImage } from "@/components/recipes/recipes-view";
 import { Highlight } from "@/components/ui/product-combobox";
 import { ConfirmSheet } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/card";
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import type { DashboardMeal, DashboardTask, DashDevice, DashProject, DashPurchase, GroceryGlance, ReadyRecipe } from "./types";
 
 // ---- Shell ---------------------------------------------------------------------
@@ -191,8 +192,8 @@ export function GroceryWidget({
                   {g.image_path ? (
                     <SignedImage path={g.image_path} alt="" className="size-10 shrink-0 rounded-xl" />
                   ) : (
-                    <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-[20px]">
-                      {g.emoji}
+                    <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2">
+                      <Emoji3D emoji={g.emoji} className="size-8 text-[20px]" />
                     </span>
                   )}
                   <span className={cn("min-w-0 flex-1 truncate text-[16px] font-medium transition-colors", on && "text-muted line-through")}>{g.name}</span>
