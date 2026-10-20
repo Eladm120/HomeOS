@@ -13,6 +13,7 @@ import { BriefCard, SetupStrip, StarterCard, useDismissed, type BriefChip } from
 import { CustomizeSheet } from "./customize-sheet";
 import { QuickActions } from "./quick-actions";
 import { HomeHero, STAT_ICONS, type HeroStat } from "./home-hero";
+import { periodFromGreeting } from "./house-scene";
 import { AttentionWidget, Avatar, EmptyTile, GroceryWidget, MealsWidget, ProjectsWidget, SmartHomeWidget, TasksWidget, WidgetError, type EmptyTileProps } from "./widgets";
 import type { DashboardProps } from "./types";
 
@@ -200,7 +201,7 @@ export function Dashboard(p: DashboardProps) {
         </p>
 
         <div style={stagger()}>
-          <HomeHero householdId={p.householdId} householdName={p.householdName} coverPath={p.coverPath} canEdit={p.isOwner} stats={heroStats} preview={p.preview} />
+          <HomeHero householdId={p.householdId} householdName={p.householdName} coverPath={p.coverPath} canEdit={p.isOwner} stats={heroStats} period={periodFromGreeting(p.greeting)} preview={p.preview} />
         </div>
 
         <div style={stagger()}>

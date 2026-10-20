@@ -223,6 +223,13 @@
 @keyframes glow-spin {
   to { --glow-angle: 360deg; }
 }
+/* House scene (dashboard): twinkling stars/fireflies, drifting clouds, rising smoke */
+@keyframes hs-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes hs-drift { from { transform: translateX(0); } to { transform: translateX(-26px); } }
+@keyframes hs-smoke { 0% { transform: translateY(4px); opacity: 0; } 30% { opacity: 0.55; } 100% { transform: translateY(-10px); opacity: 0; } }
+.hs-twinkle { animation: hs-twinkle 3.2s ease-in-out infinite; }
+.hs-drift { animation: hs-drift 24s ease-in-out infinite alternate; }
+.hs-smoke { animation: hs-smoke 4.5s ease-out infinite; transform-box: fill-box; }
 @property --glow-angle {
   syntax: "<angle>";
   initial-value: 0deg;

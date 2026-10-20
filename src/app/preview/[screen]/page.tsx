@@ -42,8 +42,14 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
   switch (screen) {
     case "home":
     case "home-partial":
-    case "home-new": {
-      content = <Dashboard {...dashboardFixture(screen, now)} />;
+    case "home-new":
+    case "home-morning":
+    case "home-day":
+    case "home-evening":
+    case "home-night": {
+      const greetings: Record<string, string> = { "home-morning": "בוקר טוב", "home-day": "צהריים טובים", "home-evening": "ערב טוב", "home-night": "לילה טוב" };
+      const fx = dashboardFixture(screen, now);
+      content = <Dashboard {...fx} greeting={greetings[screen] ?? fx.greeting} />;
       break;
     }
     case "household":
