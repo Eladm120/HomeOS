@@ -1,8 +1,8 @@
-import { PageHeader } from "@/components/layout/page-header";
 import { HubView } from "@/components/household/hub-view";
 import { requireHousehold } from "@/server/context";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { addDays, todayInZone } from "@/lib/format";
+import { addDays, greetingFor, todayInZone } from "@/lib/format";
+import { periodFromGreeting } from "@/components/dashboard/house-scene";
 import { stockLevel } from "@/lib/inventory-logic";
 import { loadAlerts } from "@/server/alerts-data";
 
@@ -20,7 +20,7 @@ export default async function HouseholdHubPage() {
   const head = { count: "exact" as const, head: true };
   const today = todayInZone(new Date(), ctx.household.timezone);
 
-  const [inventory, choresToday, choresTotal, meals, appliances, plants, bills, documents, devices, alerts, projects, purchases] = await Promise.all([
+  const [inventory, choresToday, choresTotal, meals, appliances, plants, bills, documents, devices, alerts, projects, purchases, grocery, mealsToday] = await Promise.all([
     supabase.from("inventory_items").select("quantity, min_threshold").eq("household_id", hid).is("archived_at", null),
     count(supabase.from("chores").select("id", head).eq("household_id", hid).eq("status", "active").lte("next_due_on", today)),
     count(supabase.from("chores").select("id", head).eq("household_id", hid).eq("status", "active")),
@@ -33,6 +33,8 @@ export default async function HouseholdHubPage() {
     loadAlerts(ctx),
     count(supabase.from("projects").select("id", head).eq("household_id", hid).in("status", ["planned", "in_progress", "waiting"])),
     count(supabase.from("planned_purchases").select("id", head).eq("household_id", hid).in("status", ["idea", "researching", "considering", "ready"])),
+    count(supabase.from("shopping_list_items").select("id", head).eq("household_id", hid).eq("status", "pending").is("deleted_at", null).is("cleared_at", null)),
+    count(supabase.from("meal_plan_entries").select("id", head).eq("household_id", hid).eq("plan_date", today)),
   ]);
   const items = inventory.data ?? [];
   const low = items.filter((i) => {
@@ -40,16 +42,17 @@ export default async function HouseholdHubPage() {
     return l === "low" || l === "out";
   }).length;
 
+  const me = ctx.members.find((m) => m.user_id === ctx.user.id)?.profile?.display_name ?? ctx.profile?.display_name ?? "";
+  const cover = ctx.household.settings?.cover_path;
   return (
-    <>
-      <PageHeader
-        title="משק הבית"
-        subtitle="כל מה שקשור לבית, מסודר במקום אחד"
-      />
-      <HubView
-        counts={{ inventory: items.length, low, choresToday, choresTotal, meals, appliances, plants, bills, documents, devices, projects, purchases }}
-        alerts={alerts.filter((a) => !a.handled).length}
-      />
-    </>
+    <HubView
+      counts={{ inventory: items.length, low, choresToday, choresTotal, meals, appliances, plants, bills, documents, devices, projects, purchases, grocery, mealsToday }}
+      alerts={alerts.filter((a) => !a.handled).length}
+      householdId={hid}
+      householdName={ctx.household.name}
+      userName={me}
+      coverPath={typeof cover === "string" ? cover : null}
+      period={periodFromGreeting(greetingFor(new Date(), ctx.household.timezone))}
+    />
   );
 }

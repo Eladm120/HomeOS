@@ -8,7 +8,6 @@ import { BottomNav, Sidebar } from "@/components/layout/app-nav";
 import { buildAlerts } from "@/lib/alerts";
 import { HubView } from "@/components/household/hub-view";
 import { NotificationsView } from "@/components/intelligence/notifications-view";
-import { PageHeader } from "@/components/layout/page-header";
 import { productEmoji } from "@/lib/category-style";
 import { frequencyText } from "@/lib/labels";
 import { addDays, daysUntil, formatLongDate, greetingFor, todayInZone } from "@/lib/format";
@@ -55,10 +54,14 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
     case "household":
       path = "/household";
       content = (
-        <>
-          <PageHeader title="משק הבית" subtitle="כל מה שקשור לבית, מסודר במקום אחד" />
-          <HubView counts={{ inventory: 42, low: 3, choresToday: 2, choresTotal: 9, meals: 4, appliances: 6, plants: 3, bills: 2, documents: 11, devices: 5, projects: 2, purchases: 4 }} alerts={6} />
-        </>
+        <HubView
+          counts={{ inventory: 42, low: 2, choresToday: 3, choresTotal: 9, meals: 5, appliances: 6, plants: 3, bills: 2, documents: 11, devices: 5, projects: 2, purchases: 4, grocery: 9, mealsToday: 1 }}
+          alerts={6}
+          householdId={HID}
+          householdName="הבית של אלעד ונעה"
+          userName="אלעד"
+          period="day"
+        />
       );
       break;
     case "alerts": {

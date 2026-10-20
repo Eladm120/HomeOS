@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bell, ChevronLeft, Plus, Search } from "lucide-react";
+import { Bell, ChevronLeft, ListChecks, Plus, Search, ShoppingCart, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Panel, PanelRow } from "@/components/ui/panel";
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { QuickCreateSheet } from "@/components/layout/quick-create";
 import { HUB_GROUPS, HUB_SETTINGS, type HubGroup, type HubLink } from "@/components/layout/hub-sections";
+import { HomeHero } from "@/components/dashboard/home-hero";
+import type { DayPeriod } from "@/components/dashboard/house-scene";
+import { Avatar } from "@/components/dashboard/widgets";
 
 export interface HubCounts {
   inventory: number;
@@ -21,196 +25,283 @@ export interface HubCounts {
   devices: number;
   projects: number;
   purchases: number;
-}
-
-/** What a tile says about its module: a short description, and a live status when there is one. */
-interface TileState {
-  text: string;
-  status?: string;
-  tone?: "alert" | "good" | "neutral";
+  /** Pending items on the shopping list. */
+  grocery?: number;
+  /** Meals planned for today. */
+  mealsToday?: number;
 }
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : `${n} ${many}`);
 
-function tileStates(c: HubCounts, alerts: number): Record<string, TileState> {
-  return {
-    "/inventory": {
-      text: c.inventory ? `${c.inventory} מוצרים בבית` : "מקרר, מזווה וארונות",
-      ...(c.low ? { status: `${c.low} נמוכים`, tone: "alert" as const } : c.inventory ? { status: "הכל במלאי", tone: "good" as const } : {}),
-    },
-    "/chores": {
-      text: c.choresTotal ? plural(c.choresTotal, "משימה קבועה אחת", "משימות קבועות") : "מי עושה מה, ומתי",
-      ...(c.choresToday ? { status: `${c.choresToday} להיום`, tone: "alert" as const } : c.choresTotal ? { status: "בוצע היום", tone: "good" as const } : {}),
-    },
-    "/meals": {
-      text: c.meals ? `${c.meals} ארוחות מתוכננות השבוע` : "מה אוכלים השבוע",
-      ...(c.meals ? { status: "שבועי", tone: "neutral" as const } : { status: "לתכנן", tone: "alert" as const }),
-    },
-    "/notifications": {
-      text: alerts ? "מלאי, תשלומים ומשימות" : "הכל מטופל",
-      ...(alerts ? { status: `${alerts} חדשות`, tone: "alert" as const } : {}),
-    },
-    "/smart-home": { text: c.devices ? plural(c.devices, "מכשיר מחובר", "מכשירים מחוברים") : "מזגן, דוד ותאורה", ...(c.devices ? { status: "מחובר", tone: "good" as const } : {}) },
-    "/appliances": { text: c.appliances ? plural(c.appliances, "מכשיר אחד", "מכשירים") : "קבלות, אחריות ותיקונים" },
-    "/plants": { text: c.plants ? plural(c.plants, "צמח אחד", "צמחים") : "השקיה ותזכורות" },
-    "/bills": {
-      text: "חשמל, מים, ארנונה",
-      ...(c.bills ? { status: `${c.bills} לתשלום`, tone: "alert" as const } : {}),
-    },
-    "/expenses": { text: "שכירות וחיובים קבועים" },
-    "/projects": {
-      text: c.projects ? plural(c.projects, "פרויקט פעיל אחד", "פרויקטים פעילים") : "תיקונים, שיפוצים והצעות מחיר",
-      ...(c.projects ? { status: "בעבודה", tone: "neutral" as const } : {}),
-    },
-    "/planner": { text: c.purchases ? plural(c.purchases, "פריט אחד ברשימה", "פריטים ברשימה") : "רהיטים ומכשירים לבית, עם השוואות" },
-    "/documents": { text: c.documents ? plural(c.documents, "מסמך אחד", "מסמכים") : "ביטוחים וחוזים" },
-  };
+/** The number on a tile's corner: only things worth a look. */
+function badgeFor(href: string, c: HubCounts, alerts: number): number {
+  switch (href) {
+    case "/chores":
+      return c.choresToday;
+    case "/inventory":
+      return c.low;
+    case "/meals":
+      return c.meals;
+    case "/notifications":
+      return alerts;
+    case "/bills":
+      return c.bills;
+    case "/projects":
+      return c.projects;
+    default:
+      return 0;
+  }
 }
 
-type Filter = "all" | HubGroup["id"];
+/** A short live line for the wider tiles and the "הצג הכל" rows. */
+function lineFor(href: string, c: HubCounts, alerts: number): string {
+  switch (href) {
+    case "/inventory":
+      return c.low ? `${c.low} נמוכים` : c.inventory ? `${c.inventory} מוצרים` : "מקרר, מזווה וארונות";
+    case "/chores":
+      return c.choresToday ? `${c.choresToday} להיום` : c.choresTotal ? "הכל בוצע היום" : "מי עושה מה, ומתי";
+    case "/meals":
+      return c.meals ? `${c.meals} ארוחות השבוע` : "מה אוכלים השבוע";
+    case "/notifications":
+      return alerts ? `${alerts} מחכים לך` : "הכל מטופל";
+    case "/smart-home":
+      return c.devices ? plural(c.devices, "מכשיר מחובר", "מכשירים מחוברים") : "מזגן, דוד ותאורה";
+    case "/appliances":
+      return c.appliances ? plural(c.appliances, "מכשיר אחד", "מכשירים") : "אחריות ותיקונים";
+    case "/plants":
+      return c.plants ? plural(c.plants, "צמח אחד", "צמחים") : "השקיה ותזכורות";
+    case "/planner":
+      return c.purchases ? plural(c.purchases, "פריט אחד", "פריטים") : "רהיטים ומכשירים";
+    case "/documents":
+      return c.documents ? plural(c.documents, "מסמך אחד", "מסמכים") : "ביטוחים וחוזים";
+    case "/bills":
+      return c.bills ? `${c.bills} לתשלום` : "חשמל, מים, ארנונה";
+    case "/projects":
+      return c.projects ? plural(c.projects, "פרויקט פעיל", "פרויקטים פעילים") : "תיקונים ושיפוצים";
+    case "/expenses":
+      return "שכירות וחיובים קבועים";
+    default:
+      return "";
+  }
+}
+
+const tint = (hue: number) => ({ "--h": hue, background: `linear-gradient(160deg, oklch(calc(var(--tile-l) + 0.015) 0.025 ${hue}) 0%, oklch(calc(var(--tile-l) - 0.03) 0.05 ${hue}) 100%)` }) as React.CSSProperties;
 
 /**
- * The household hub: a modular home for every module. Search and quick add on
- * top, then one tile per module — icon, what it is, and what's going on in it
- * right now — grouped into everyday, the home and management.
+ * "משק הבית": a warm home for every module. A personal header, search with a
+ * round "+", the house itself with today's numbers, then three illustrated
+ * sections — everyday life, our home (a bento with smart home as the big
+ * tile), and running the home. Each section shows three tiles and opens the
+ * rest with "הצג הכל".
  */
-export function HubView({ counts, alerts }: { counts: HubCounts; alerts: number }) {
-  const [filter, setFilter] = useState<Filter>("all");
+export function HubView({
+  counts,
+  alerts,
+  householdId,
+  householdName,
+  userName,
+  coverPath = null,
+  period = "day",
+}: {
+  counts: HubCounts;
+  alerts: number;
+  householdId: string;
+  householdName: string;
+  userName: string;
+  coverPath?: string | null;
+  period?: DayPeriod;
+}) {
   const [create, setCreate] = useState(false);
-  const states = tileStates(counts, alerts);
-  const groups = filter === "all" ? HUB_GROUPS : HUB_GROUPS.filter((g) => g.id === filter);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const stats = [
+    { key: "g", icon: ShoppingCart, value: counts.grocery ?? 0, label: "לקנייה", href: "/shopping" },
+    { key: "t", icon: ListChecks, value: counts.choresToday, label: "משימות היום", href: "/chores" },
+    { key: "m", icon: UtensilsCrossed, value: counts.mealsToday ?? 0, label: (counts.mealsToday ?? 0) === 1 ? "ארוחה היום" : "ארוחות היום", href: "/meals" },
+  ];
 
   return (
-    <div className="space-y-6 pb-4">
-      <div className="flex gap-2">
-        <Link href="/search" className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-2xl bg-surface px-4 text-[16px] text-muted shadow-[var(--card-shadow)]">
-          <Search className="size-[18px] shrink-0" />
-          <span className="truncate">חיפוש בכל הבית…</span>
+    <div className="space-y-6 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4 lg:pt-8">
+      {/* Header: me · title · notifications */}
+      <header className="flex items-center gap-3">
+        <Link href="/household/settings" aria-label="הפרופיל והבית">
+          <Avatar name={userName} index={0} className="size-12 text-[18px] shadow-[var(--card-shadow)] ring-[3px] ring-surface" />
+        </Link>
+        <div className="min-w-0 flex-1 text-center">
+          <h1 className="text-[30px] leading-tight font-extrabold tracking-[-0.02em]">משק הבית</h1>
+          <p className="truncate text-[14px] text-muted">כל מה שקשור לבית, מסודר במקום אחד</p>
+        </div>
+        <Link
+          href="/notifications"
+          aria-label={alerts ? `התראות, ${alerts} חדשות` : "התראות"}
+          className="pressable relative grid size-12 shrink-0 place-items-center rounded-full bg-surface shadow-[var(--card-shadow)]"
+        >
+          <Bell className="size-[22px]" strokeWidth={1.9} />
+          {alerts > 0 && <span className="absolute top-2.5 end-3 size-2.5 rounded-full bg-terracotta ring-2 ring-surface" />}
+        </Link>
+      </header>
+
+      {/* Search + add */}
+      <div className="flex items-center gap-3">
+        <Link href="/search" className="flex h-[52px] min-w-0 flex-1 items-center gap-2.5 rounded-full bg-surface px-5 text-[16px] text-muted shadow-[var(--card-shadow)]">
+          <Search className="size-5 shrink-0" />
+          <span className="truncate">חיפוש בכל משק הבית...</span>
         </Link>
         <button
           type="button"
           onClick={() => setCreate(true)}
-          className="pressable flex h-12 shrink-0 items-center gap-1.5 rounded-2xl bg-primary px-4 text-[15px] font-semibold text-primary-foreground"
+          aria-label="הוספה"
+          className="pressable grid size-[52px] shrink-0 place-items-center rounded-full bg-[linear-gradient(160deg,color-mix(in_oklab,var(--accent)_80%,#fff),var(--accent))] text-primary-foreground shadow-[0_10px_22px_-10px_var(--accent)]"
         >
-          <Plus className="size-5" strokeWidth={2.4} /> הוספה
+          <Plus className="size-7" strokeWidth={2.4} />
         </button>
       </div>
 
-      <div role="group" aria-label="סינון לפי קבוצה" className="scrollbar-none -mx-4 -mt-2 flex gap-2 overflow-x-auto px-4">
-        {([{ id: "all", title: "הכל" }, ...HUB_GROUPS] as { id: Filter; title: string }[]).map((g) => {
-          const active = filter === g.id;
-          return (
-            <button
-              key={g.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setFilter(g.id)}
-              className={cn(
-                "pressable h-9 shrink-0 rounded-full px-4 text-[14px] font-semibold transition-colors",
-                active ? "bg-foreground text-background" : "bg-surface text-foreground/75 shadow-[var(--card-shadow)]",
-              )}
-            >
-              {g.title}
-            </button>
-          );
-        })}
-      </div>
+      <HomeHero householdId={householdId} householdName={householdName} coverPath={coverPath} canEdit={false} stats={stats} period={period} />
 
-      {alerts > 0 && filter === "all" && (
-        <Link href="/notifications" className="hero pressable flex items-center gap-3.5 p-4">
-          <span aria-hidden className="relative grid size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground">
-            <Bell className="size-[22px]" strokeWidth={2.2} />
-            <span className="num absolute -top-1 -end-1 grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1 text-[11px] font-bold text-background">{alerts}</span>
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[17px] font-semibold">{alerts === 1 ? "דבר אחד מחכה לך" : `${alerts} דברים מחכים לך`}</span>
-            <span className="hero-muted block text-[13px]">מלאי נמוך, תשלומים קרובים ומשימות</span>
-          </span>
-          <ChevronLeft className="hero-muted size-5" />
-        </Link>
-      )}
-
-      {groups.map((g) => (
-        <section key={g.id} aria-labelledby={`hub-${g.id}`}>
-          <h2 id={`hub-${g.id}`} className="mb-2.5 px-1 text-[19px] font-semibold [font-family:var(--font-display)]">
-            {g.title}
-          </h2>
-          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-            {g.links.map((l, i) => (
-              <ModuleTile key={l.href} link={l} state={states[l.href]} wide={g.links.length % 2 === 1 && i === g.links.length - 1} />
-            ))}
-          </div>
-        </section>
+      {HUB_GROUPS.map((g) => (
+        <HubSection key={g.id} group={g} counts={counts} alerts={alerts} open={!!open[g.id]} onToggle={() => setOpen((o) => ({ ...o, [g.id]: !o[g.id] }))} />
       ))}
 
-      {filter === "all" && (
-        <section aria-labelledby="hub-settings">
-          <h2 id="hub-settings" className="mb-2.5 px-1 text-[19px] font-semibold [font-family:var(--font-display)]">
-            מערכת
-          </h2>
-          <Panel>
-            {HUB_SETTINGS.map((l) => (
-              <PanelRow
-                key={l.href}
-                href={l.href}
-                leading={
-                  <span aria-hidden className="mod-chip grid size-9 shrink-0 place-items-center rounded-xl" style={{ "--h": l.hue } as React.CSSProperties}>
-                    <l.icon className="size-[18px]" strokeWidth={2.1} />
-                  </span>
-                }
-                title={l.label}
-              />
-            ))}
-          </Panel>
-        </section>
-      )}
+      <section aria-labelledby="hub-settings">
+        <h2 id="hub-settings" className="mb-2.5 px-1 text-[20px] font-extrabold">
+          מערכת
+        </h2>
+        <Panel>
+          {HUB_SETTINGS.map((l) => (
+            <PanelRow
+              key={l.href}
+              href={l.href}
+              leading={
+                <span aria-hidden className="mod-chip grid size-9 shrink-0 place-items-center rounded-xl" style={{ "--h": l.hue } as React.CSSProperties}>
+                  <l.icon className="size-[18px]" strokeWidth={2.1} />
+                </span>
+              }
+              title={l.label}
+            />
+          ))}
+        </Panel>
+      </section>
 
       <QuickCreateSheet open={create} onOpenChange={setCreate} />
     </div>
   );
 }
 
-/** `wide`: the odd one out in a group spans the row (lays out sideways) so the grid never leaves a hole. */
-function ModuleTile({ link: l, state, wide }: { link: HubLink; state?: TileState; wide?: boolean }) {
-  const Icon = l.icon;
-  if (wide)
-    return (
-      <Link href={l.href} className="mod-tile pressable col-span-2 flex items-center gap-3.5 p-3.5 lg:col-span-1 lg:min-h-[150px] lg:flex-col lg:items-stretch" style={{ "--h": l.hue } as React.CSSProperties}>
-        <span aria-hidden className="mod-chip grid size-12 shrink-0 place-items-center rounded-[16px]">
-          <Icon className="size-6" strokeWidth={1.9} />
-        </span>
-        <span className="min-w-0 flex-1 lg:mt-auto">
-          <span className="block text-[16px] leading-tight font-semibold">{l.label}</span>
-          {state && <span className="mt-1 block truncate text-[12.5px] text-muted">{state.text}</span>}
-        </span>
-        {state?.status ? <StatusBadge state={state} /> : <ChevronLeft className="size-5 shrink-0 text-muted-2 lg:hidden" />}
-      </Link>
-    );
+function HubSection({ group: g, counts, alerts, open, onToggle }: { group: HubGroup; counts: HubCounts; alerts: number; open: boolean; onToggle: () => void }) {
+  const featured = g.links.slice(0, 3);
+  const rest = g.links.slice(3);
   return (
-    <Link href={l.href} className="mod-tile pressable flex min-h-[150px] flex-col p-3.5" style={{ "--h": l.hue } as React.CSSProperties}>
-      <div className="flex items-start justify-between gap-2">
-        <span aria-hidden className="mod-chip grid size-12 place-items-center rounded-[16px]">
-          <Icon className="size-6" strokeWidth={1.9} />
-        </span>
-        {state?.status && <StatusBadge state={state} />}
+    <section aria-labelledby={`hub-${g.id}`}>
+      <div className="mb-3 flex items-center justify-between px-1">
+        <h2 id={`hub-${g.id}`} className="text-[21px] font-extrabold">
+          {g.title}
+        </h2>
+        {rest.length > 0 && (
+          <button type="button" onClick={onToggle} aria-expanded={open} className="flex items-center gap-0.5 text-[14px] text-muted">
+            {open ? "פחות" : "הצג הכל"}
+            <ChevronLeft className={cn("size-4 transition-transform", open && "-rotate-90")} />
+          </button>
+        )}
       </div>
-      <span className="mt-auto pt-4">
-        <span className="block text-[16px] leading-tight font-semibold">{l.label}</span>
-        {state && <span className="mt-1 line-clamp-2 block text-[12.5px] leading-snug text-muted">{state.text}</span>}
+
+      {g.id === "home" ? (
+        // Bento: two wide tiles on one side, the smart home as a tall feature tile on the other.
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
+            {featured.slice(1).map((l) => (
+              <WideTile key={l.href} link={l} line={lineFor(l.href, counts, alerts)} />
+            ))}
+          </div>
+          <FeatureTile link={featured[0]} line={lineFor(featured[0].href, counts, alerts)} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-2.5">
+          {featured.map((l) => (
+            <ArtTile key={l.href} link={l} badge={badgeFor(l.href, counts, alerts)} />
+          ))}
+        </div>
+      )}
+
+      {open && rest.length > 0 && (
+        <div className="mt-3 space-y-2 animate-fade-up">
+          {rest.map((l) => (
+            <Link key={l.href} href={l.href} className="card pressable flex items-center gap-3 p-3 pe-4" style={{ "--h": l.hue } as React.CSSProperties}>
+              <span className="grid size-12 shrink-0 place-items-center rounded-2xl" style={tint(l.hue)}>
+                <Emoji3D emoji={l.art} className="size-9" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[16px] font-bold">{l.label}</span>
+                <span className="block truncate text-[13px] text-muted">{lineFor(l.href, counts, alerts)}</span>
+              </span>
+              {badgeFor(l.href, counts, alerts) > 0 && <Badge hue={l.hue} n={badgeFor(l.href, counts, alerts)} />}
+              <ChevronLeft className="size-5 text-muted-2" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Badge({ hue, n, className }: { hue: number; n: number; className?: string }) {
+  return (
+    <span
+      className={cn("num grid size-8 shrink-0 place-items-center rounded-full text-[15px] font-bold text-white shadow-[0_4px_10px_-4px_rgba(0,0,0,0.35)]", className)}
+      style={{ background: `oklch(0.62 0.16 ${hue})` }}
+    >
+      {n > 99 ? "99+" : n}
+    </span>
+  );
+}
+
+/** Square tile: a big 3D picture on a soft halo, the module name, and a count in the corner. */
+function ArtTile({ link: l, badge }: { link: HubLink; badge: number }) {
+  return (
+    <Link href={l.href} className="pressable relative flex aspect-[0.82] flex-col overflow-hidden rounded-[1.375rem] p-2.5 pb-3 shadow-[var(--card-shadow)]" style={tint(l.hue)}>
+      {badge > 0 && <Badge hue={l.hue} n={badge} className="absolute top-2 end-2 z-10 size-7 text-[13px]" />}
+      <span className="grid flex-1 place-items-center">
+        <span className="grid size-[72px] place-items-center rounded-full" style={{ background: `oklch(calc(var(--tile-l) - 0.06) 0.06 ${l.hue} / 0.7)` }}>
+          <Emoji3D emoji={l.art} className="size-[60px]" />
+        </span>
+      </span>
+      <span className="flex items-end justify-between gap-0.5">
+        <span className="text-[14px] leading-[1.15] font-bold">{l.label}</span>
+        <ChevronLeft className="size-4 shrink-0 text-muted" />
       </span>
     </Link>
   );
 }
 
-function StatusBadge({ state }: { state: TileState }) {
+/** Wide tile for the bento: name and chevron on one side, the picture on the other. */
+function WideTile({ link: l, line }: { link: HubLink; line: string }) {
   return (
-    <span
-      className={cn(
-        "mt-0.5 inline-flex h-6 shrink-0 items-center rounded-full px-2.5 text-[11.5px] font-bold whitespace-nowrap",
-        state.tone === "alert" ? "bg-terracotta-soft text-terracotta" : state.tone === "good" ? "bg-sage-soft text-sage" : "bg-fill text-muted",
-      )}
-    >
-      {state.status}
-    </span>
+    <Link href={l.href} className="pressable relative flex h-[104px] items-center gap-2 overflow-hidden rounded-[1.375rem] ps-4 shadow-[var(--card-shadow)]" style={tint(l.hue)}>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1 text-[16px] font-bold">
+          {l.label}
+          <ChevronLeft className="size-4 text-muted" />
+        </span>
+        <span className="mt-0.5 block truncate text-[12px] text-muted">{line}</span>
+      </span>
+      <Emoji3D emoji={l.art} className="-me-2 size-[84px] shrink-0" />
+    </Link>
+  );
+}
+
+/** The tall feature tile (smart home): a cozy corner with the bulb chip and the name. */
+function FeatureTile({ link: l, line }: { link: HubLink; line: string }) {
+  return (
+    <Link href={l.href} className="pressable relative flex min-h-[220px] flex-col overflow-hidden rounded-[1.375rem] p-4 shadow-[var(--card-shadow)]" style={tint(l.hue)}>
+      <span aria-hidden className="absolute inset-x-0 bottom-0 h-2/3" style={{ background: `radial-gradient(90% 80% at 30% 100%, oklch(calc(var(--tile-l) - 0.02) 0.06 70 / 0.9), transparent 70%)` }} />
+      <span className="relative grid size-14 place-items-center rounded-full bg-surface/80 shadow-sm">
+        <Emoji3D emoji={l.art} className="size-11" />
+      </span>
+      <span className="relative mt-2 flex items-center gap-1 text-[17px] font-bold">
+        {l.label}
+        <ChevronLeft className="size-4 text-muted" />
+      </span>
+      <span className="relative block text-[12px] text-muted">{line}</span>
+      <Emoji3D emoji="🛋️" className="absolute -bottom-3 -start-3 size-[150px] opacity-95" />
+    </Link>
   );
 }
