@@ -8,7 +8,7 @@ An AI-assisted household operating system for couples and families. It is Hebrew
 
 | Area | Status |
 |---|---|
-| Auth (email link or password), household creation, invitations, roles | ✅ |
+| Auth (email + password, no confirmation step), household creation, partner invitations by email, roles | ✅ |
 | Design: calm "sage" palette, light/dark, Hebrew RTL, iPhone safe areas | ✅ |
 | Shared shopping list (single list = in-store mode): category cards, product pictures, photos, check → leaves to cart, offline check-off, real-time sync, finish trip → inventory | ✅ |
 | Inventory: movement-based stock, thresholds, expiry, confirmed vs estimated, bulk setup, barcode/photo scan | ✅ |
@@ -94,7 +94,9 @@ Optional server variables (each enables one feature; see `.env.example`):
    Suggestions are also refreshed whenever someone opens the home screen.
 4. Add the optional env vars in Vercel (*Project → Settings → Environment Variables*), then push `main`; Vercel deploys automatically.
 5. Google: in Google Cloud Console create an OAuth client (Web) with redirect URI `https://homeos-one-psi.vercel.app/api/integrations/google/callback`, enable the Calendar and Gmail APIs, and add both of you as test users while the app is unverified.
-6. Home Assistant: in the app, *משק הבית → חיבורים*, enter a public HTTPS URL (e.g. Home Assistant Cloud) and a long-lived access token.
+6. **Sign-up without email confirmation:** in Supabase, *Authentication → Sign In / Providers → Email*, turn **Confirm email** off. New members are then signed in right after they register.
+7. Partner invitations by email: set `RESEND_API_KEY` and `INVITE_FROM_EMAIL` (a sender on a domain verified in Resend). Without them, "שליחת הזמנה" opens your own mail app with the invitation filled in.
+8. Home Assistant: in the app, *משק הבית → חיבורים*, enter a public HTTPS URL (e.g. Home Assistant Cloud) and a long-lived access token.
 
 **Live:** https://homeos-one-psi.vercel.app (Vercel project `homeos`). Every push to `main` deploys to production.
 

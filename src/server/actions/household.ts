@@ -11,6 +11,7 @@ import { flattenZodError, householdNameSchema, inviteSchema, nameSchema } from "
 import { ACTIVE_HOUSEHOLD_COOKIE, getUser } from "@/server/context";
 import { dbFail, fail, ok, withHousehold } from "@/server/action-utils";
 import { log } from "@/server/log";
+import { sendInviteEmail } from "@/server/invite-email";
 
 const COOKIE_OPTS = { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 };
 
@@ -40,7 +41,7 @@ export async function switchHousehold(householdId: string): Promise<void> {
   redirect("/");
 }
 
-export async function createInvitation(input: { email?: string }): Promise<ActionResult<{ url: string; expiresAt: string }>> {
+export async function createInvitation(input: { email?: string }): Promise<ActionResult<{ url: string; expiresAt: string; emailed: boolean }>> {
   const parsed = inviteSchema.safeParse(input);
   if (!parsed.success) return { ok: false, ...flattenZodError(parsed.error) };
 
@@ -53,7 +54,10 @@ export async function createInvitation(input: { email?: string }): Promise<Actio
     if (error) return dbFail("invitation.create", error);
     const row = (data as { token: string; expires_at: string }[])[0];
     revalidatePath("/household/settings");
-    return ok({ url: `${await requestOrigin()}/invite/${row.token}`, expiresAt: row.expires_at });
+    const url = `${await requestOrigin()}/invite/${row.token}`;
+    const inviterName = ctx.members.find((m) => m.user_id === ctx.user.id)?.profile?.display_name ?? ctx.profile?.display_name ?? "";
+    const emailed = parsed.data.email ? await sendInviteEmail({ to: parsed.data.email, inviterName, householdName: ctx.household.name, url }) : false;
+    return ok({ url, expiresAt: row.expires_at, emailed });
   });
 }
 
