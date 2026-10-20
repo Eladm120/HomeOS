@@ -105,7 +105,7 @@ export function GroceryItemRow({
   return (
     <div className="flex min-h-[66px] items-center gap-3 py-2.5 ps-3.5 pe-3.5">
       <CheckCircle checked={checked} onToggle={onToggle} label={checked ? `החזרת ${item.name} לרשימה` : `סימון ${item.name} כנקנה`} />
-      <ProductThumb name={item.name} imagePath={item.image_path} category={category} dim={checked} onOpenPhoto={() => setViewer(true)} />
+      <ProductThumb name={item.name} imagePath={item.image_path} category={category} dim={checked} onOpenPhoto={() => setViewer(true)} className="size-12" />
 
       <button type="button" onClick={onOpen} disabled={!onOpen} className="min-w-0 flex-1 text-start disabled:cursor-default">
         <span className={cn("flex items-center gap-2 transition-colors", checked && "text-muted")}>
@@ -117,7 +117,7 @@ export function GroceryItemRow({
         {meta && <span className="footnote mt-0.5 block truncate text-muted">{meta}</span>}
       </button>
 
-      <span className={cn("num shrink-0 text-[15px] text-muted", checked && "opacity-60")}>{formatQuantityWithUnit(item.quantity, item.unit)}</span>
+      <span className={cn("num grid h-8 shrink-0 place-items-center rounded-full bg-primary-soft px-3 text-[14px] font-bold text-primary", checked && "bg-fill text-muted opacity-70")}>{formatQuantityWithUnit(item.quantity, item.unit)}</span>
 
       {item.image_path && <ImageViewer path={item.image_path} alt={item.name} open={viewer} onOpenChange={setViewer} />}
     </div>

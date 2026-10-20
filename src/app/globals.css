@@ -4,146 +4,143 @@
 
 /* =============================================================================
    HomeOS design language — "warm premium household".
-   Dark by default: a warm near-black room, soft surfaces with a hairline of
-   light on top, one luminous accent (mint by default) and a few gentle module
-   colours (gold, mauve, sky, peach). Light premium is the alternative theme.
-   Every module colour is a hue (--h) rendered through .cat-tint / .cat-ink, so
-   icons stay one family in both themes. The accent can be changed per device
-   (<html data-accent>: mint · mauve · gold · peach).
+   Light by default: a warm off-white room (#F7F7F2), white cards with a
+   hairline border and a soft lift, deep green-grey ink (#292D29), a sage green
+   accent (#77AA91 family) and a warm apricot (#F0BD84) for highlights. A dark
+   theme uses the same semantic tokens. Module colours are hues (--h) rendered
+   through .mod-chip / .cat-tint, so icons stay one family in both themes.
+   The accent can be changed per device (<html data-accent>).
    ========================================================================== */
 :root {
-  --accent: #2f9e78;
+  --accent: #5e977b;
   --accent-ink: #ffffff;
-  --accent-glow: #98e0bc;
-  --peach: #f5c7a9;
-  --gold: #c99a3a;
-  --mauve: #7c6cf2;
+  --accent-glow: #77aa91;
+  --peach: #f0bd84;
+  --gold: #d29a4e;
+  --mauve: #8a7fd0;
 
-  /* Rooms and surfaces — light premium */
-  --background: #f7f6fb;
+  --background: #f7f7f2;
   --surface: #ffffff;
-  --surface-2: #f2f0f8;
-  --surface-3: #e8e5f2;
-  --fill: color-mix(in oklab, #26233a 6%, transparent);
-  --fill-strong: color-mix(in oklab, #26233a 11%, transparent);
+  --surface-2: #f1f2ec;
+  --surface-3: #e7e9e1;
+  --fill: color-mix(in oklab, #292d29 6%, transparent);
+  --fill-strong: color-mix(in oklab, #292d29 11%, transparent);
 
-  --foreground: #26233a;
-  --muted: #7d7896;
-  --muted-2: color-mix(in oklab, #26233a 30%, transparent);
-  --border: color-mix(in oklab, #26233a 8%, transparent);
+  --foreground: #292d29;
+  --muted: #737a72;
+  --muted-2: color-mix(in oklab, #292d29 30%, transparent);
+  --border: color-mix(in oklab, #292d29 9%, transparent);
   --ring: var(--accent);
 
   --primary: var(--accent);
   --primary-hover: color-mix(in oklab, var(--accent) 88%, #000);
-  --primary-soft: color-mix(in oklab, var(--accent) 12%, #ffffff);
+  --primary-soft: color-mix(in oklab, var(--accent-glow) 16%, #ffffff);
   --primary-foreground: var(--accent-ink);
-  --sage: #2f9e78;
-  --sage-soft: #e3f5ec;
-  --amber: #a8700a;
-  --amber-soft: #fbf0d9;
-  --danger: #e0573e;
-  --danger-soft: #ffebe6;
-  --sky: #3f86d6;
-  --sky-soft: #e6f1fc;
-  --teal: #2a9c9c;
-  --pink: #d9598c;
+  --sage: #4f8b6e;
+  --sage-soft: #e6f1eb;
+  --amber: #a4691d;
+  --amber-soft: #fcf0de;
+  --danger: #d4553d;
+  --danger-soft: #fcebe6;
+  --sky: #4a83c4;
+  --sky-soft: #e8f0fa;
+  --teal: #3d9690;
+  --pink: #cf5f8a;
   --yellow: #b38900;
-  --purple: #7c6cf2;
+  --purple: #8a7fd0;
 
-  /* Module / category tiles (OKLCH; hue from --h on the element) */
-  --tile-l: 0.95;
-  --tile-c: 0.04;
+  --tile-l: 0.955;
+  --tile-c: 0.035;
   --ink-l: 0.52;
-  --ink-c: 0.13;
+  --ink-c: 0.1;
 
-  --glass-bg: color-mix(in oklab, #ffffff 78%, transparent);
-  --glass-border: color-mix(in oklab, #26233a 8%, transparent);
+  --glass-bg: color-mix(in oklab, #ffffff 82%, transparent);
+  --glass-border: color-mix(in oklab, #292d29 8%, transparent);
   --glass-highlight: rgba(255, 255, 255, 0.95);
-  --glass-shadow: 0 12px 32px rgba(38, 35, 58, 0.12);
+  --glass-shadow: 0 10px 30px rgba(41, 45, 41, 0.12);
 
-  --radius: 1.375rem;
+  --radius: 1.25rem;
 
-  --terracotta: #e2774a;
-  --terracotta-soft: #fdeee5;
-  --honey: #c99a3a;
-  --honey-soft: #fbf2de;
-  --card-shadow: 0 0 0 0.5px var(--border), 0 1px 2px rgba(38, 35, 58, 0.04), 0 14px 32px -18px rgba(38, 35, 58, 0.18);
+  --terracotta: #cf6b45;
+  --terracotta-soft: #fcede5;
+  --honey: #c8893a;
+  --honey-soft: #fdf2e3;
+  --card-shadow: 0 0 0 1px var(--border), 0 1px 2px rgba(41, 45, 41, 0.04), 0 10px 26px -16px rgba(41, 45, 41, 0.16);
 
-  /* The hero (daily brief) */
-  --hero-from: #e4f5ec;
-  --hero-to: #efeafd;
-  --hero-ink: #26233a;
-  --page-glow: color-mix(in oklab, var(--accent-glow) 30%, transparent);
+  --hero-from: #e5f1ea;
+  --hero-to: #fcefdd;
+  --hero-ink: #292d29;
+  --page-glow: color-mix(in oklab, var(--accent-glow) 14%, transparent);
 }
 
-:root[data-accent="mauve"] { --accent: #7c6cf2; --accent-glow: #c8b6ff; }
-:root[data-accent="gold"] { --accent: #b9852a; --accent-glow: #e2bb68; }
-:root[data-accent="peach"] { --accent: #dc6d3c; --accent-glow: #f5c7a9; }
+:root[data-accent="mauve"] { --accent: #7a6fc4; --accent-glow: #b9b0ea; }
+:root[data-accent="gold"] { --accent: #b97d2e; --accent-glow: #f0bd84; }
+:root[data-accent="peach"] { --accent: #cf6b45; --accent-glow: #f3b99a; }
 
-/* Dark premium (the default theme): warm near-black, never blue-black */
+/* Dark theme: the same tokens at night — deep green-grey, never pure black */
 .dark {
-  --accent: #98e0bc;
-  --accent-ink: #0d1a13;
-  --accent-glow: #98e0bc;
-  --peach: #f5b994;
-  --gold: #e2bb68;
-  --mauve: #c8b6ff;
+  --accent: #8fc3a9;
+  --accent-ink: #0f1a14;
+  --accent-glow: #8fc3a9;
+  --peach: #f0bd84;
+  --gold: #e9b873;
+  --mauve: #bfb6f0;
 
-  --background: #121010;
-  --surface: #1c1818;
-  --surface-2: #241f1f;
-  --surface-3: #2e2828;
-  --fill: color-mix(in oklab, #f6f1f1 7%, transparent);
-  --fill-strong: color-mix(in oklab, #f6f1f1 13%, transparent);
+  --background: #131513;
+  --surface: #1b1e1b;
+  --surface-2: #222622;
+  --surface-3: #2b302b;
+  --fill: color-mix(in oklab, #eef1ec 7%, transparent);
+  --fill-strong: color-mix(in oklab, #eef1ec 13%, transparent);
 
-  --foreground: #f6f1f1;
-  --muted: #b9afaf;
-  --muted-2: color-mix(in oklab, #f6f1f1 32%, transparent);
-  --border: color-mix(in oklab, #f6f1f1 8%, transparent);
+  --foreground: #eef1ec;
+  --muted: #a6ada5;
+  --muted-2: color-mix(in oklab, #eef1ec 32%, transparent);
+  --border: color-mix(in oklab, #eef1ec 9%, transparent);
   --ring: var(--accent);
 
   --primary: var(--accent);
   --primary-hover: color-mix(in oklab, var(--accent) 88%, #fff);
-  --primary-soft: color-mix(in oklab, var(--accent) 16%, #1c1818);
+  --primary-soft: color-mix(in oklab, var(--accent) 16%, #1b1e1b);
   --primary-foreground: var(--accent-ink);
-  --sage: #98e0bc;
-  --sage-soft: color-mix(in oklab, #98e0bc 15%, #1c1818);
-  --amber: #e2bb68;
-  --amber-soft: color-mix(in oklab, #e2bb68 15%, #1c1818);
-  --danger: #ff8f7a;
-  --danger-soft: color-mix(in oklab, #ff8f7a 15%, #1c1818);
-  --sky: #9cc8f5;
-  --sky-soft: color-mix(in oklab, #9cc8f5 15%, #1c1818);
-  --teal: #86d6d0;
-  --pink: #f3a6c4;
+  --sage: #8fc3a9;
+  --sage-soft: color-mix(in oklab, #8fc3a9 15%, #1b1e1b);
+  --amber: #e9b873;
+  --amber-soft: color-mix(in oklab, #e9b873 15%, #1b1e1b);
+  --danger: #f2937e;
+  --danger-soft: color-mix(in oklab, #f2937e 15%, #1b1e1b);
+  --sky: #9cc3ef;
+  --sky-soft: color-mix(in oklab, #9cc3ef 15%, #1b1e1b);
+  --teal: #86d0c8;
+  --pink: #f0a6c2;
   --yellow: #ecd06a;
-  --purple: #c8b6ff;
+  --purple: #bfb6f0;
 
-  --tile-l: 0.29;
-  --tile-c: 0.045;
+  --tile-l: 0.3;
+  --tile-c: 0.04;
   --ink-l: 0.86;
-  --ink-c: 0.1;
+  --ink-c: 0.09;
 
-  --glass-bg: color-mix(in oklab, #1c1818 78%, transparent);
-  --glass-border: color-mix(in oklab, #f6f1f1 9%, transparent);
-  --glass-highlight: rgba(255, 255, 255, 0.07);
-  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  --glass-bg: color-mix(in oklab, #1b1e1b 80%, transparent);
+  --glass-border: color-mix(in oklab, #eef1ec 9%, transparent);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 
-  --terracotta: #f5a27f;
-  --terracotta-soft: color-mix(in oklab, #f5a27f 15%, #1c1818);
-  --honey: #e2bb68;
-  --honey-soft: color-mix(in oklab, #e2bb68 14%, #1c1818);
-  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 0 0 0.5px var(--border), 0 16px 36px -20px rgba(0, 0, 0, 0.7);
+  --terracotta: #f2a07e;
+  --terracotta-soft: color-mix(in oklab, #f2a07e 15%, #1b1e1b);
+  --honey: #e9b873;
+  --honey-soft: color-mix(in oklab, #e9b873 14%, #1b1e1b);
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 1px var(--border), 0 14px 32px -20px rgba(0, 0, 0, 0.7);
 
-  --hero-from: color-mix(in oklab, var(--accent) 24%, #1c1818);
-  --hero-to: color-mix(in oklab, var(--gold) 12%, #1c1818);
-  --hero-ink: #f6f1f1;
-  --page-glow: color-mix(in oklab, var(--accent) 14%, transparent);
+  --hero-from: color-mix(in oklab, var(--accent) 20%, #1b1e1b);
+  --hero-to: color-mix(in oklab, var(--peach) 12%, #1b1e1b);
+  --hero-ink: #eef1ec;
+  --page-glow: color-mix(in oklab, var(--accent) 10%, transparent);
 }
 
-.dark[data-accent="mauve"] { --accent: #c8b6ff; --accent-ink: #1b1530; --accent-glow: #c8b6ff; }
-.dark[data-accent="gold"] { --accent: #e2bb68; --accent-ink: #231804; --accent-glow: #e2bb68; }
-.dark[data-accent="peach"] { --accent: #f5b994; --accent-ink: #2a1408; --accent-glow: #f5b994; }
+.dark[data-accent="mauve"] { --accent: #bfb6f0; --accent-ink: #1b1530; --accent-glow: #bfb6f0; }
+.dark[data-accent="gold"] { --accent: #e9b873; --accent-ink: #231804; --accent-glow: #e9b873; }
+.dark[data-accent="peach"] { --accent: #f3b99a; --accent-ink: #2a1408; --accent-glow: #f3b99a; }
 
 @theme inline {
   --color-background: var(--background);
@@ -182,8 +179,8 @@
   --color-peach: var(--peach);
 
   /* SF on Apple devices (incl. SF Hebrew), Heebo elsewhere */
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Hebrew", var(--font-heebo), system-ui, sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Hebrew", var(--font-plex), var(--font-heebo), system-ui, sans-serif;
+  --font-sans: var(--font-heebo), "SF Hebrew", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: var(--font-heebo), "SF Hebrew", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 12px rgba(0, 0, 0, 0.04);
   --shadow-lift: 0 10px 40px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.06);

@@ -19,6 +19,8 @@ export interface HubCounts {
   bills: number;
   documents: number;
   devices: number;
+  projects: number;
+  purchases: number;
 }
 
 /** What a tile says about its module: a short description, and a live status when there is one. */
@@ -56,6 +58,11 @@ function tileStates(c: HubCounts, alerts: number): Record<string, TileState> {
       ...(c.bills ? { status: `${c.bills} לתשלום`, tone: "alert" as const } : {}),
     },
     "/expenses": { text: "שכירות וחיובים קבועים" },
+    "/projects": {
+      text: c.projects ? plural(c.projects, "פרויקט פעיל אחד", "פרויקטים פעילים") : "תיקונים, שיפוצים והצעות מחיר",
+      ...(c.projects ? { status: "בעבודה", tone: "neutral" as const } : {}),
+    },
+    "/planner": { text: c.purchases ? plural(c.purchases, "פריט אחד ברשימה", "פריטים ברשימה") : "רהיטים ומכשירים לבית, עם השוואות" },
     "/documents": { text: c.documents ? plural(c.documents, "מסמך אחד", "מסמכים") : "ביטוחים וחוזים" },
   };
 }

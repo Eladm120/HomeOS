@@ -25,6 +25,21 @@ export async function saveMealEntry(id: string | null, input: MealEntryInput): P
   });
 }
 
+/** Move a planned meal to another day and/or slot (drag and drop, "העברה"). */
+export async function moveMealEntry(id: string, input: { plan_date: string; slot: string }): Promise<ActionResult<null>> {
+  const parsed = z
+    .object({ plan_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), slot: z.enum(["breakfast", "lunch", "dinner", "snack"]) })
+    .safeParse(input);
+  if (!uuid.safeParse(id).success || !parsed.success) return fail("קלט לא תקין");
+  return withHousehold(async (ctx, supabase) => {
+    const { error } = await supabase.from("meal_plan_entries").update(parsed.data).eq("id", id).eq("household_id", ctx.household.id);
+    if (error) return dbFail("meals.move", error);
+    revalidatePath("/meals");
+    revalidatePath("/");
+    return ok(null);
+  });
+}
+
 export async function deleteMealEntry(id: string): Promise<ActionResult<null>> {
   if (!uuid.safeParse(id).success) return fail("מזהה לא תקין");
   return withHousehold(async (ctx, supabase) => {

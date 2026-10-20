@@ -5,7 +5,7 @@
  *   from IndexedDB by the page, and queued check-offs sync when back online.
  * - Never caches API, auth, server actions (POST) or Supabase traffic.
  */
-const VERSION = "homeos-v2";
+const VERSION = "homeos-v3";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const OFFLINE_PAGES = ["/shopping"];

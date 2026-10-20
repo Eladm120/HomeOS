@@ -14,7 +14,7 @@ function ServiceWorkerRegistrar() {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="homeos-theme-v2" disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="homeos-theme-v3" disableTransitionOnChange>
       {children}
       <Toaster
         dir="rtl"

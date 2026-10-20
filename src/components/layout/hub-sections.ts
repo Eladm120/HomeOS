@@ -2,6 +2,8 @@ import {
   Bell,
   ChartColumn,
   FolderOpen,
+  Hammer,
+  Sofa,
   HouseWifi,
   Link2,
   Package,
@@ -19,8 +21,8 @@ import {
  * Every module behind the "משק הבית" tab, grouped the way people think about
  * the home. One icon family (Lucide), one hue per module: the hue drives the
  * module's chip and glow everywhere it appears (hub, sidebar, dashboard).
- * Projects, purchase planning, the calendar, receipts and product scanning are
- * parked for now: their routes still work, they are just not on the menu.
+ * The calendar, receipts and product scanning are reached from inside other
+ * modules (quick actions, inventory) rather than from the hub.
  */
 export interface HubLink {
   href: string;
@@ -39,7 +41,7 @@ export interface HubGroup {
 export const HUB_GROUPS: HubGroup[] = [
   {
     id: "daily",
-    title: "יומיומי",
+    title: "חיי היום־יום",
     links: [
       { href: "/inventory", label: "מלאי הבית", icon: Package, hue: 75 },
       { href: "/chores", label: "משימות", icon: SquareCheckBig, hue: 155 },
@@ -49,20 +51,22 @@ export const HUB_GROUPS: HubGroup[] = [
   },
   {
     id: "home",
-    title: "הבית",
+    title: "הבית שלנו",
     links: [
       { href: "/smart-home", label: "בית חכם", icon: HouseWifi, hue: 280 },
       { href: "/appliances", label: "מכשירים", icon: PlugZap, hue: 230 },
       { href: "/plants", label: "צמחים", icon: Sprout, hue: 140 },
+      { href: "/projects", label: "תיקונים ופרויקטים", icon: Hammer, hue: 30 },
     ],
   },
   {
     id: "manage",
-    title: "ניהול",
+    title: "ניהול הבית",
     links: [
       { href: "/bills", label: "חשבונות", icon: Receipt, hue: 320 },
       { href: "/expenses", label: "הוצאות הבית", icon: ChartColumn, hue: 255 },
       { href: "/documents", label: "מסמכים", icon: FolderOpen, hue: 200 },
+      { href: "/planner", label: "קניות לבית", icon: Sofa, hue: 340 },
     ],
   },
 ];

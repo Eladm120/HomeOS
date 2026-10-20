@@ -57,7 +57,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
       content = (
         <>
           <PageHeader title="משק הבית" subtitle="כל מה שקשור לבית, מסודר במקום אחד" />
-          <HubView counts={{ inventory: 42, low: 3, choresToday: 2, choresTotal: 9, meals: 4, appliances: 6, plants: 3, bills: 2, documents: 11, devices: 5 }} alerts={6} />
+          <HubView counts={{ inventory: 42, low: 3, choresToday: 2, choresTotal: 9, meals: 4, appliances: 6, plants: 3, bills: 2, documents: 11, devices: 5, projects: 2, purchases: 4 }} alerts={6} />
         </>
       );
       break;

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Eye, EyeOff, PackageCheck, X } from "lucide-react";
+import { toast } from "sonner";
 import type { ProductCategory, ShoppingListItem } from "@/lib/types";
 import { groupByCategory } from "@/lib/grocery";
 import { categoryStyle } from "@/lib/category-style";
@@ -81,6 +82,13 @@ export function StoreMode({
     sections.current.forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, [groups]);
+
+  /** Tick or untick, with an undo right there — nothing in this mode can delete a product. */
+  function toggleWithUndo(it: ShoppingListItem) {
+    if (navigator.vibrate) navigator.vibrate(10);
+    onToggle(it);
+    if (it.status === "pending") toast(`${it.name} בעגלה ✓`, { action: { label: "ביטול", onClick: () => onToggle({ ...it, status: "purchased" }) } });
+  }
 
   const jump = (key: string) => sections.current.get(key)?.scrollIntoView({ behavior: "smooth", block: "start" });
   const pct = total ? (done.length / total) * 100 : 0;
@@ -173,7 +181,11 @@ export function StoreMode({
                   {g.left > 0 && (
                     <button
                       type="button"
-                      onClick={() => g.items.filter((i) => i.status === "pending").forEach(onToggle)}
+                      onClick={() => {
+                        const left = g.items.filter((i) => i.status === "pending");
+                        left.forEach(onToggle);
+                        toast(`${left.length} מוצרים בעגלה ✓`, { action: { label: "ביטול", onClick: () => left.forEach((i) => onToggle({ ...i, status: "purchased" })) } });
+                      }}
                       className="pressable h-9 rounded-xl bg-sage px-3.5 text-[14px] font-bold text-white dark:text-[var(--accent-ink)]"
                     >
                       קיבלתי הכל
@@ -183,33 +195,36 @@ export function StoreMode({
                 <ul className="space-y-2.5">
                   {g.items.map((it) => {
                     const inCart = it.status !== "pending";
-                    const meta = [g.name, it.brand, it.variant, it.notes].filter(Boolean).join(" · ");
+                    const meta = [it.brand, it.variant, it.notes].filter(Boolean).join(" · ");
                     return (
-                      <li key={it.id} className={cn("card flex min-h-[92px] items-center gap-3 p-3 ps-3.5 transition-all duration-300", inCart && "opacity-55")}>
-                        <ProductThumb name={it.name} imagePath={it.image_path} category={category} dim={inCart} className="size-14 rounded-2xl bg-transparent text-[36px]" />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2">
-                            <span className={cn("truncate text-[20px] leading-tight font-semibold", inCart && "line-through decoration-2")}>{it.name}</span>
-                            {it.priority === "high" && !inCart && <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">דחוף</span>}
-                          </span>
-                          {meta && <span className="mt-0.5 block truncate text-[14px] text-muted">{meta}</span>}
-                        </span>
-                        <span className="num grid h-9 min-w-9 shrink-0 place-items-center rounded-full bg-fill px-2.5 text-[16px] font-bold">{formatQuantityWithUnit(it.quantity, it.unit)}</span>
+                      <li key={it.id}>
                         <button
                           type="button"
                           role="checkbox"
                           aria-checked={inCart}
                           aria-label={inCart ? `החזרת ${it.name} לרשימה` : `${it.name} בעגלה`}
-                          onClick={() => {
-                            if (navigator.vibrate) navigator.vibrate(10);
-                            onToggle(it);
-                          }}
-                          className={cn(
-                            "pressable grid size-[66px] shrink-0 place-items-center rounded-2xl text-[16px] font-black transition-colors",
-                            inCart ? "bg-fill text-muted" : "bg-sage text-white dark:text-[var(--accent-ink)]",
-                          )}
+                          onClick={() => toggleWithUndo(it)}
+                          className={cn("card flex min-h-[96px] w-full items-center gap-3.5 p-3 text-start transition-all duration-300 active:scale-[0.985]", inCart && "opacity-55")}
                         >
-                          {inCart ? <Check className="size-7 animate-pop" strokeWidth={3} /> : "יש!"}
+                          {/* Giant checkbox: the whole row is the target, the box shows the state */}
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "grid size-14 shrink-0 place-items-center rounded-[18px] border-[3px] transition-all duration-300",
+                              inCart ? "border-primary bg-primary text-primary-foreground" : "border-muted-2 bg-surface",
+                            )}
+                          >
+                            {inCart && <Check className="size-8 animate-pop" strokeWidth={3.25} />}
+                          </span>
+                          <ProductThumb name={it.name} imagePath={it.image_path} category={category} dim={inCart} className="size-16 rounded-2xl text-[38px]" />
+                          <span className="min-w-0 flex-1">
+                            <span className={cn("block truncate text-[21px] leading-tight font-bold", inCart && "line-through decoration-2")}>{it.name}</span>
+                            <span className="mt-1.5 flex items-center gap-1.5">
+                              <span className={cn("num shrink-0 rounded-full px-2.5 py-0.5 text-[15px] font-black", inCart ? "bg-fill text-muted" : "bg-primary-soft text-primary")}>{formatQuantityWithUnit(it.quantity, it.unit)}</span>
+                              {it.priority === "high" && !inCart && <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-[12px] font-bold text-danger">דחוף</span>}
+                              {meta && <span className="min-w-0 truncate text-[13px] text-muted">{meta}</span>}
+                            </span>
+                          </span>
                         </button>
                       </li>
                     );

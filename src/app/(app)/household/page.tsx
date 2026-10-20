@@ -20,7 +20,7 @@ export default async function HouseholdHubPage() {
   const head = { count: "exact" as const, head: true };
   const today = todayInZone(new Date(), ctx.household.timezone);
 
-  const [inventory, choresToday, choresTotal, meals, appliances, plants, bills, documents, devices, alerts] = await Promise.all([
+  const [inventory, choresToday, choresTotal, meals, appliances, plants, bills, documents, devices, alerts, projects, purchases] = await Promise.all([
     supabase.from("inventory_items").select("quantity, min_threshold").eq("household_id", hid).is("archived_at", null),
     count(supabase.from("chores").select("id", head).eq("household_id", hid).eq("status", "active").lte("next_due_on", today)),
     count(supabase.from("chores").select("id", head).eq("household_id", hid).eq("status", "active")),
@@ -31,6 +31,8 @@ export default async function HouseholdHubPage() {
     count(supabase.from("documents").select("id", head).eq("household_id", hid)),
     count(supabase.from("smart_home_devices").select("id", head).eq("household_id", hid).eq("pinned", true)),
     loadAlerts(ctx),
+    count(supabase.from("projects").select("id", head).eq("household_id", hid).in("status", ["planned", "in_progress", "waiting"])),
+    count(supabase.from("planned_purchases").select("id", head).eq("household_id", hid).in("status", ["idea", "researching", "considering", "ready"])),
   ]);
   const items = inventory.data ?? [];
   const low = items.filter((i) => {
@@ -45,7 +47,7 @@ export default async function HouseholdHubPage() {
         subtitle="כל מה שקשור לבית, מסודר במקום אחד"
       />
       <HubView
-        counts={{ inventory: items.length, low, choresToday, choresTotal, meals, appliances, plants, bills, documents, devices }}
+        counts={{ inventory: items.length, low, choresToday, choresTotal, meals, appliances, plants, bills, documents, devices, projects, purchases }}
         alerts={alerts.filter((a) => !a.handled).length}
       />
     </>

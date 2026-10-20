@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUp, Camera, CloudOff, LayoutGrid, ListTodo, PackageCheck, Plus, ShoppingCart, Sparkles, Store } from "lucide-react";
+import { ArrowUp, Camera, CloudOff, LayoutGrid, ListTodo, PackageCheck, Plus, Search, ShoppingCart, Sparkles, Store } from "lucide-react";
 import { toast } from "sonner";
 import { addShoppingItem, deleteShoppingItem, restoreShoppingItem } from "@/server/actions/grocery";
 import { useGroceryList, type SyncState } from "@/hooks/use-grocery-list";
 import { useOpenFromQuery } from "@/hooks/use-open-from-query";
-import { groupByCategory, splitByStatus, suggestProducts, type SmartSuggestion } from "@/lib/grocery";
+import { groupByCategory, normalizeProductName, splitByStatus, suggestProducts, type SmartSuggestion } from "@/lib/grocery";
 import { categoryStyle, guessCategoryId, productEmoji } from "@/lib/category-style";
 import { parseBulkLine } from "@/lib/validation";
 import type { ProductCategory, ShoppingListItem } from "@/lib/types";
@@ -91,7 +91,14 @@ export function GroceryView(props: GroceryViewProps) {
 
   const catById = useMemo(() => new Map(props.categories.map((c) => [c.id, c])), [props.categories]);
   const { pending, done } = useMemo(() => splitByStatus(items), [items]);
-  const groups = useMemo(() => groupByCategory(pending, props.categories), [pending, props.categories]);
+  const [search, setSearch] = useState("");
+  const [onlyUrgent, setOnlyUrgent] = useState(false);
+  const urgentCount = pending.filter((i) => i.priority === "high").length;
+  const visiblePending = useMemo(() => {
+    const q = normalizeProductName(search);
+    return pending.filter((i) => (!onlyUrgent || i.priority === "high") && (!q || normalizeProductName(`${i.name} ${i.brand ?? ""} ${i.notes ?? ""}`).includes(q)));
+  }, [pending, search, onlyUrgent]);
+  const groups = useMemo(() => groupByCategory(visiblePending, props.categories), [visiblePending, props.categories]);
   const total = pending.length + done.length;
   const parsed = useMemo(() => parseBulkLine(draft), [draft]);
   // Products the home already knows whose name contains what's being typed ("חלב" → חלב, חלב סויה…).
@@ -277,7 +284,26 @@ export function GroceryView(props: GroceryViewProps) {
         )}
       </div>
 
-      {tab === "buy" && smart.length > 0 && (
+      {tab === "buy" && pending.length > 3 && (
+        <div className="mb-5 flex items-center gap-2">
+          <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-2xl bg-surface px-3.5 shadow-[var(--card-shadow)]">
+            <Search className="size-[18px] shrink-0 text-muted" />
+            <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש ברשימה" aria-label="חיפוש ברשימה" className="min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-muted" />
+          </label>
+          {urgentCount > 0 && (
+            <button
+              type="button"
+              aria-pressed={onlyUrgent}
+              onClick={() => setOnlyUrgent((v) => !v)}
+              className={cn("pressable flex h-11 shrink-0 items-center gap-1.5 rounded-2xl px-3.5 text-[14px] font-semibold", onlyUrgent ? "bg-danger text-white" : "bg-danger-soft text-danger")}
+            >
+              דחוף <span className="num">{urgentCount}</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {tab === "buy" && smart.length > 0 && !search && (
         <section aria-label="הצעות חכמות" className="mb-5">
           <h2 className="mb-2 flex items-center gap-1.5 px-1 text-[14px] font-semibold text-primary">
             <Sparkles className="size-4" /> הצעות חכמות
@@ -325,6 +351,7 @@ export function GroceryView(props: GroceryViewProps) {
           </div>
         ) : (
           <div className="space-y-5">
+            {groups.length === 0 && <p className="py-8 text-center text-[15px] text-muted">לא נמצאו מוצרים {search ? `עבור ״${search}״` : "דחופים"}</p>}
             {groups.map((g) => {
               const category = g.id ? (catById.get(g.id) ?? null) : null;
               const style = categoryStyle(category);
@@ -402,7 +429,7 @@ export function GroceryView(props: GroceryViewProps) {
       <div className="h-24" aria-hidden />
 
       {/* One thumb-reach dock: add on the list, checkout in the cart */}
-      <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.6rem+62px+10px)] z-30 px-3 lg:start-72 lg:bottom-6">
+      <div className="fixed inset-x-0 bottom-[calc(max(0.35rem,env(safe-area-inset-bottom))+74px)] z-30 px-3 lg:start-72 lg:bottom-6">
         <div className="mx-auto max-w-md lg:max-w-xl">
           {tab === "cart" && inCart > 0 ? (
             <Button size="lg" className="w-full shadow-lift" onClick={() => setFinishOpen(true)}>
@@ -491,7 +518,8 @@ export function GroceryView(props: GroceryViewProps) {
           pending={pending}
           done={done}
           categories={props.categories}
-          onToggle={(it) => setStatus(it, it.status === "pending" ? "purchased" : "pending")}
+          // The passed status says what the tap means; the latest copy carries the current version.
+          onToggle={(it) => setStatus(latest(it.id) ?? it, it.status === "pending" ? "purchased" : "pending")}
           onFinish={() => setFinishOpen(true)}
           onClose={closeStore}
         />

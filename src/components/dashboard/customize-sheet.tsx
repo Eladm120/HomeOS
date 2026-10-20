@@ -88,10 +88,10 @@ export function CustomizeSheet({
 }
 
 const ACCENTS = [
-  { id: "mint", label: "מנטה", swatch: "#98e0bc" },
-  { id: "mauve", label: "לילך", swatch: "#c8b6ff" },
-  { id: "gold", label: "זהב", swatch: "#e2bb68" },
-  { id: "peach", label: "אפרסק", swatch: "#f5b994" },
+  { id: "mint", label: "מרווה", swatch: "#77aa91" },
+  { id: "mauve", label: "לילך", swatch: "#a99fe0" },
+  { id: "gold", label: "משמש", swatch: "#f0bd84" },
+  { id: "peach", label: "טרקוטה", swatch: "#e08a66" },
 ] as const;
 
 /** The house colour, per device: applied on <html data-accent> before first paint (see the root layout). */

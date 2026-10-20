@@ -92,6 +92,7 @@ export default async function MealsPage({ searchParams }: { searchParams: Promis
       shortfalls={shortfalls}
       suggestions={suggestions}
       signedUrls={signedUrls}
+      hasStock={stock.length > 0}
     />
   );
 }

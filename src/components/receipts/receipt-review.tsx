@@ -165,7 +165,7 @@ export function ReceiptReview({
       </div>
 
       {editable && lines.length > 0 && (
-        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.6rem+62px+10px)] z-30 px-3 lg:start-72 lg:bottom-6">
+        <div className="fixed inset-x-0 bottom-[calc(max(0.35rem,env(safe-area-inset-bottom))+74px)] z-30 px-3 lg:start-72 lg:bottom-6">
           <div className="mx-auto max-w-md lg:max-w-xl">
             <Button size="lg" className="w-full shadow-lift" disabled={pendingReview > 0} loading={saving} onClick={confirm}>
               {pendingReview ? `נשארו ${pendingReview} שורות לבדיקה` : `אישור ועדכון ${toStock} מוצרים במלאי`}

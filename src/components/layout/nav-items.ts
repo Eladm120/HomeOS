@@ -18,9 +18,9 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/inventory", "/household", "/chores", "/projects", "/planner", "/appliances", "/documents", "/plants", "/bills", "/expenses", "/calendar", "/smart-home", "/settings", "/notifications", "/suggestions", "/search", "/receipts", "/scan"],
   },
   { href: "/recipes", label: "מתכונים", icon: ChefHat, match: ["/meals"] },
+  { href: "/assistant", label: "עוזר AI", icon: Sparkles },
 ];
 
-export const ASSISTANT_ITEM: NavItem = { href: "/assistant", label: "עוזר AI", icon: Sparkles };
 
 export function isActive(item: NavItem, pathname: string): boolean {
   if (item.href === "/") return pathname === "/";
