@@ -86,12 +86,13 @@ export interface EmptyTileProps {
   title: string;
   text: string;
   href: string;
+  hue?: number;
 }
 
-export function EmptyTile({ icon: Icon, title, text, href }: Omit<EmptyTileProps, "key">) {
+export function EmptyTile({ icon: Icon, title, text, href, hue = 155 }: Omit<EmptyTileProps, "key">) {
   return (
-    <Link href={href} className="widget pressable group flex flex-col gap-3 p-3.5">
-      <span aria-hidden className="icon-well grid size-10 place-items-center rounded-[14px]">
+    <Link href={href} className="mod-tile pressable group flex flex-col gap-3 p-3.5" style={{ "--h": hue } as React.CSSProperties}>
+      <span aria-hidden className="mod-chip grid size-11 place-items-center rounded-[15px]">
         <Icon className="size-[19px]" strokeWidth={2.1} />
       </span>
       <span className="min-w-0">

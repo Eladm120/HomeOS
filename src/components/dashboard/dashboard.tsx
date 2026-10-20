@@ -131,7 +131,7 @@ export function Dashboard(p: DashboardProps) {
         if (p.tasks.length || p.tasksDoneToday) blocks.push(<TasksWidget key={id} tasks={p.tasks} doneToday={p.tasksDoneToday} members={p.members} currentUserId={p.currentUserId} preview={p.preview} />);
         else {
           unavailable.tasks = "אין משימות להיום";
-          tiles.push({ key: id, icon: ListChecks, title: "משימות", text: "אין להיום · הוספה", href: "/chores?new=1" });
+          tiles.push({ key: id, icon: ListChecks, title: "משימות", text: "אין להיום · הוספה", href: "/chores?new=1", hue: 75 });
         }
         break;
       case "meals":
@@ -140,8 +140,8 @@ export function Dashboard(p: DashboardProps) {
           unavailable.meals = "לא תוכננה ארוחה להיום";
           tiles.push(
             recipesSaved
-              ? { key: id, icon: UtensilsCrossed, title: "ארוחות", text: "מה אוכלים היום?", href: "/meals" }
-              : { key: id, icon: ChefHat, title: "מתכונים", text: "לשמור מתכון ראשון", href: "/recipes/new" },
+              ? { key: id, icon: UtensilsCrossed, title: "ארוחות", text: "מה אוכלים היום?", href: "/meals", hue: 40 }
+              : { key: id, icon: ChefHat, title: "מתכונים", text: "לשמור מתכון ראשון", href: "/recipes/new", hue: 15 },
           );
         }
         break;
@@ -164,8 +164,8 @@ export function Dashboard(p: DashboardProps) {
           if (p.stage !== "new")
             tiles.push(
               p.smartHome.connected
-                ? { key: id, icon: Lightbulb, title: "בית חכם", text: "לבחור מכשירים", href: "/smart-home" }
-                : { key: id, icon: Lightbulb, title: "בית חכם", text: p.isOwner ? "לחבר מזגן ותאורה" : "עוד לא מחובר", href: p.isOwner ? "/settings/integrations" : "/smart-home" },
+                ? { key: id, icon: Lightbulb, title: "בית חכם", text: "לבחור מכשירים", href: "/smart-home", hue: 280 }
+                : { key: id, icon: Lightbulb, title: "בית חכם", text: p.isOwner ? "לחבר מזגן ותאורה" : "עוד לא מחובר", href: p.isOwner ? "/settings/integrations" : "/smart-home", hue: 280 },
             );
         }
         break;
@@ -173,7 +173,7 @@ export function Dashboard(p: DashboardProps) {
         if (p.projects.length || p.purchases.length) blocks.push(<ProjectsWidget key={id} projects={p.projects} purchases={p.purchases} />);
         else {
           unavailable.projects = "אין פרויקטים פעילים";
-          if (p.stage !== "new") tiles.push({ key: id, icon: Hammer, title: "פרויקטים", text: "תיקון או שיפוץ", href: "/projects?new=1" });
+          if (p.stage !== "new") tiles.push({ key: id, icon: Hammer, title: "פרויקטים", text: "תיקון או שיפוץ", href: "/projects?new=1", hue: 30 });
         }
         break;
     }

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { addDays, daysUntil, formatHebrewCalendarDate, formatLongDate, greetingFor, todayInZone, zonedToIso } from "@/lib/format";
+import { addDays, daysUntil, formatLongDate, greetingFor, todayInZone, zonedToIso } from "@/lib/format";
 import { frequencyText, MEAL_SLOT } from "@/lib/labels";
 import { categoryStyle, productEmoji } from "@/lib/category-style";
 import { householdStage, LAYOUT_PREF_KEY, normalizeLayout, type WidgetId } from "@/lib/dashboard";
@@ -119,7 +119,7 @@ export async function loadDashboardData(ctx: HouseholdContext): Promise<Dashboar
     coverPath,
     greeting: greetingFor(now, tz),
     userName: me,
-    dateLine: `${formatLongDate(now, tz)} · ${formatHebrewCalendarDate(now, tz)}`,
+    dateLine: formatLongDate(now, tz),
     members: ctx.members.map((m) => ({ id: m.user_id, name: m.profile?.display_name ?? "" })),
     currentUserId: ctx.user.id,
     isOwner: ctx.role === "owner",

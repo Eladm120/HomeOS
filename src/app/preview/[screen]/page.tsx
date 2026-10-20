@@ -11,7 +11,7 @@ import { NotificationsView } from "@/components/intelligence/notifications-view"
 import { PageHeader } from "@/components/layout/page-header";
 import { productEmoji } from "@/lib/category-style";
 import { frequencyText } from "@/lib/labels";
-import { addDays, daysUntil, formatHebrewCalendarDate, formatLongDate, greetingFor, todayInZone } from "@/lib/format";
+import { addDays, daysUntil, formatLongDate, greetingFor, todayInZone } from "@/lib/format";
 import { HID, ME, PARTNER, categories, groceries, inventory, locations, memberNames } from "../fixtures";
 import { normalizeLayout } from "@/lib/dashboard";
 import * as mods from "../fixtures-modules";
@@ -152,7 +152,7 @@ function dashboardFixture(screen: string, now: Date): React.ComponentProps<typeo
     coverPath: null,
     greeting: greetingFor(now),
     userName: "אלעד",
-    dateLine: `${formatLongDate(now)} · ${formatHebrewCalendarDate(now)}`,
+    dateLine: formatLongDate(now),
     members: stage === "new" ? [{ id: ME, name: "אלעד" }] : [
       { id: ME, name: "אלעד" },
       { id: PARTNER, name: "נעה" },
