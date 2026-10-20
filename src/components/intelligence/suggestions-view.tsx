@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -61,7 +62,7 @@ export function SuggestionCard({ s, compact, onDone }: { s: SuggestionView; comp
   return (
     <div className={cn("flex gap-3 px-4 py-3", busy && "opacity-60")}>
       <span aria-hidden className="cat-tint grid size-10 shrink-0 place-items-center rounded-[12px] text-[20px]" style={{ "--h": kind.hue } as React.CSSProperties}>
-        {kind.emoji}
+        <Emoji3D emoji={kind.emoji} className="size-[72%]" />
       </span>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-start justify-between gap-2">

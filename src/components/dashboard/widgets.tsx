@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AirVent, ArrowUp, BellRing, ChevronLeft, Clock, Flame, Hammer, HouseWifi, Lightbulb, Loader2, Plug, Power, RotateCw, ShoppingCart, SquareCheckBig, Thermometer, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { AirVent, ArrowUp, BellRing, Check, ChevronLeft, Clock, Flame, Hammer, HouseWifi, Lightbulb, Loader2, Package, Plug, Power, Receipt, RotateCw, Sofa, TriangleAlert, Wrench, ShoppingCart, SquareCheckBig, Thermometer, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { AlertItem } from "@/lib/alerts";
 import { suggestProducts } from "@/lib/grocery";
-import { guessCategoryId } from "@/lib/category-style";
+import { guessCategoryId, productEmoji } from "@/lib/category-style";
+import { resolveAlert } from "@/server/actions/alerts";
 import { parseBulkLine } from "@/lib/validation";
 import { formatQuantity, relativeDays } from "@/lib/format";
 import { PROJECT_STATUS, PURCHASE_STATUS } from "@/lib/labels";
@@ -107,8 +108,8 @@ export function EmptyTile({ icon: Icon, title, text, href }: Omit<EmptyTileProps
 export function WidgetError({ title, onRetry }: { title: string; onRetry: () => void }) {
   return (
     <div className="widget flex items-center gap-3 p-3.5">
-      <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-[14px] bg-danger-soft text-[18px]">
-        ⚠️
+      <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-[14px] bg-danger-soft text-danger">
+        <TriangleAlert className="size-5" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[14px] font-semibold">{title}</span>
@@ -578,8 +579,8 @@ export function ProjectsWidget({ projects, purchases }: { projects: DashProject[
         {projects.map((p) => (
           <li key={p.id}>
             <Link href={`/projects/${p.id}`} className="flex min-h-[54px] items-center gap-3 px-4 py-2 active:bg-fill">
-              <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-xl bg-fill text-[17px]">
-                {p.kind === "repair" ? "🔧" : "🛠️"}
+              <span aria-hidden className="mod-chip grid size-9 shrink-0 place-items-center rounded-xl" style={{ "--h": p.kind === "repair" ? 30 : 185 } as React.CSSProperties}>
+                {p.kind === "repair" ? <Wrench className="size-[18px]" /> : <Hammer className="size-[18px]" />}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-medium">{p.title}</span>
@@ -603,14 +604,96 @@ export function ProjectsWidget({ projects, purchases }: { projects: DashProject[
         {purchases.map((p) => (
           <li key={p.id}>
             <Link href={`/planner/${p.id}`} className="flex min-h-[54px] items-center gap-3 px-4 py-2 active:bg-fill">
-              <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-xl bg-fill text-[17px]">
-                🛋️
+              <span aria-hidden className="mod-chip grid size-9 shrink-0 place-items-center rounded-xl" style={{ "--h": 340 } as React.CSSProperties}>
+                <Sofa className="size-[18px]" />
               </span>
               <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{p.name}</span>
               <Badge tone={PURCHASE_STATUS[p.status].tone}>{PURCHASE_STATUS[p.status].label}</Badge>
             </Link>
           </li>
         ))}
+      </ul>
+    </WidgetShell>
+  );
+}
+
+// ---- Low stock & upcoming payments (both built from the household's alerts) ----
+
+function useAlertActions(preview?: boolean) {
+  const router = useRouter();
+  const [gone, setGone] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState<string | null>(null);
+  async function act(a: AlertItem) {
+    if (!a.action) return;
+    if (preview) return void setGone((s) => new Set(s).add(a.key));
+    setBusy(a.key);
+    const res = await resolveAlert({ type: a.action.type, id: a.action.id });
+    setBusy(null);
+    if (!res.ok) return void toast.error(res.error);
+    setGone((s) => new Set(s).add(a.key));
+    toast.success(res.data.message);
+    router.refresh();
+  }
+  return { gone, busy, act };
+}
+
+/** What's running out or expiring, as product tiles with a one-tap "to the list". */
+export function LowStockWidget({ alerts, preview }: { alerts: AlertItem[]; preview?: boolean }) {
+  const { gone, busy, act } = useAlertActions(preview);
+  const items = alerts.filter((a) => !gone.has(a.key));
+  const name = (a: AlertItem) => a.title.replace(/ (נגמר|עומד להיגמר|פג תוקף)$/, "").replace(/ — תוקף .*$/, "");
+  return (
+    <WidgetShell id="lowstock" icon={Package} hue={75} title="מלאי נמוך" meta={`${items.length} מוצרים דורשים תשומת לב`} href="/inventory?filter=low">
+      <div className="scrollbar-none flex snap-x gap-2.5 overflow-x-auto px-4 pb-4">
+        {items.map((a) => (
+          <div key={a.key} className="flex w-[124px] shrink-0 snap-start flex-col items-center rounded-[1.125rem] bg-surface-2 p-3 text-center">
+            <Link href={a.href} className="flex flex-col items-center">
+              <Emoji3D emoji={productEmoji(name(a))} className="size-12 text-[32px]" />
+              <span className="mt-1.5 line-clamp-1 text-[14px] font-semibold">{name(a)}</span>
+              <span className={cn("line-clamp-1 text-[11.5px]", a.urgency === "now" ? "font-semibold text-danger" : "text-muted")}>{a.group === "expiry" ? a.detail : a.urgency === "now" ? "נגמר" : "עומד להיגמר"}</span>
+            </Link>
+            {a.handled ? (
+              <span className="mt-2 flex h-8 items-center gap-1 text-[12px] font-semibold text-sage">
+                <Check className="size-3.5" /> ברשימה
+              </span>
+            ) : a.action ? (
+              <button type="button" disabled={busy === a.key} onClick={() => act(a)} className="pressable mt-2 flex h-8 items-center gap-1 rounded-full bg-primary px-3 text-[12px] font-bold text-primary-foreground">
+                {busy === a.key ? <Loader2 className="size-3.5 animate-spin" /> : <ShoppingCart className="size-3.5" />} {a.action.label}
+              </button>
+            ) : (
+              <span className="mt-2 h-8" />
+            )}
+          </div>
+        ))}
+      </div>
+    </WidgetShell>
+  );
+}
+
+/** Bills and fixed charges due soon, with the amount up front and "שולם". */
+export function BillsWidget({ alerts, preview }: { alerts: AlertItem[]; preview?: boolean }) {
+  const { gone, busy, act } = useAlertActions(preview);
+  const items = alerts.filter((a) => !gone.has(a.key));
+  return (
+    <WidgetShell id="bills" icon={Receipt} hue={320} title="תשלומים קרובים" meta={items.length ? `${items.length} בשבוע הקרוב` : "הכל שולם"} href="/bills">
+      <ul className="space-y-2 px-3 pb-3">
+        {items.map((a) => {
+          const [label, amount] = a.title.split(" · ");
+          return (
+            <li key={a.key} className="flex items-center gap-3 rounded-2xl bg-surface-2 p-2.5 ps-3">
+              <Link href={a.href} className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-semibold">{label}</span>
+                <span className={cn("block truncate text-[12.5px]", a.urgency === "now" ? "font-semibold text-terracotta" : "text-muted")}>{a.detail}</span>
+              </Link>
+              {amount && <span className="num shrink-0 text-[17px] font-bold">{amount}</span>}
+              {a.action && (
+                <button type="button" disabled={busy === a.key} onClick={() => act(a)} className="pressable flex h-9 shrink-0 items-center rounded-full bg-primary-soft px-3.5 text-[13px] font-bold text-primary">
+                  {busy === a.key ? <Loader2 className="size-4 animate-spin" /> : a.action.label}
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </WidgetShell>
   );

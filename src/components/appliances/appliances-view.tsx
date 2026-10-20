@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useMemo, useState } from "react";
 import { Refrigerator } from "lucide-react";
 import type { Appliance, Room } from "@/lib/types";
@@ -71,7 +72,7 @@ export function AppliancesView({ householdId, appliances, rooms, signedUrls }: {
                     <SignedImage path={a.image_path} alt={a.name} className="size-11 shrink-0 rounded-[14px]" />
                   ) : (
                     <span aria-hidden className="cat-tint grid size-11 shrink-0 place-items-center rounded-[14px] text-[22px]" style={{ "--h": 235 } as React.CSSProperties}>
-                      {applianceEmoji(a)}
+                      <Emoji3D emoji={applianceEmoji(a)} className="size-[72%]" />
                     </span>
                   )
                 }

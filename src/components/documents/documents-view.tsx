@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useMemo, useState } from "react";
 import { FileText } from "lucide-react";
 import type { HouseholdDocument } from "@/lib/types";
@@ -22,7 +23,7 @@ export function expiryBadge(date: string | null): { text: string; tone: "danger"
 export function DocIcon({ category }: { category: string }) {
   return (
     <span aria-hidden className="cat-tint grid size-11 shrink-0 place-items-center rounded-[14px] text-[22px]" style={{ "--h": 260 } as React.CSSProperties}>
-      {(DOCUMENT_CATEGORY[category] ?? DOCUMENT_CATEGORY.other).emoji}
+      <Emoji3D emoji={(DOCUMENT_CATEGORY[category] ?? DOCUMENT_CATEGORY.other).emoji} className="size-[72%]" />
     </span>
   );
 }

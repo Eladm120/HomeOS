@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Hammer } from "lucide-react";
+import { Hammer, Wrench } from "lucide-react";
 import type { HomeProject, ProjectKind, Room, ServiceProvider } from "@/lib/types";
 import { PROJECT_STATUS } from "@/lib/labels";
 import { daysUntil, relativeDays } from "@/lib/format";
@@ -19,8 +19,8 @@ type StateFilter = "open" | "done";
 
 export function ProjectIcon({ kind, className }: { kind: ProjectKind; className?: string }) {
   return (
-    <span aria-hidden className={cn("cat-tint grid size-11 shrink-0 place-items-center rounded-[14px] text-[22px]", className)} style={{ "--h": kind === "repair" ? 30 : 185 } as React.CSSProperties}>
-      {kind === "repair" ? "🔧" : "🛠️"}
+    <span aria-hidden className={cn("mod-chip grid size-11 shrink-0 place-items-center rounded-[14px] [&_svg]:size-[21px]", className)} style={{ "--h": kind === "repair" ? 30 : 185 } as React.CSSProperties}>
+      {kind === "repair" ? <Wrench strokeWidth={2} /> : <Hammer strokeWidth={2} />}
     </span>
   );
 }
@@ -76,10 +76,10 @@ export function ProjectsView({
       />
       <div className="mb-4 grid grid-cols-2 gap-2">
         <Button variant="soft" onClick={() => setSheet("repair")}>
-          🔧 דיווח על תקלה
+          <Wrench /> דיווח על תקלה
         </Button>
         <Button variant="secondary" onClick={() => setSheet("project")}>
-          🛠️ פרויקט חדש
+          <Hammer /> פרויקט חדש
         </Button>
       </div>
       <div className="mb-4 flex flex-col gap-3">

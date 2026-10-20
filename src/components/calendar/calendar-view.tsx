@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -68,7 +69,7 @@ export function CalendarView({ householdId, items, members, monthStart, googleCo
     const body = (
       <>
         <span aria-hidden className="cat-tint grid size-10 shrink-0 place-items-center rounded-[12px] text-[19px]" style={{ "--h": c.hue } as React.CSSProperties}>
-          {c.emoji}
+          <Emoji3D emoji={c.emoji} className="size-[72%]" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium">{i.title}</span>

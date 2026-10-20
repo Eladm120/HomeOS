@@ -14,7 +14,8 @@ import { CustomizeSheet } from "./customize-sheet";
 import { QuickActions } from "./quick-actions";
 import { HomeHero, STAT_ICONS, type HeroStat } from "./home-hero";
 import { periodFromGreeting } from "./house-scene";
-import { AttentionWidget, Avatar, EmptyTile, GroceryWidget, MealsWidget, ProjectsWidget, SmartHomeWidget, TasksWidget, WidgetError, type EmptyTileProps } from "./widgets";
+import { AttentionWidget, Avatar, BillsWidget, EmptyTile, GroceryWidget, LowStockWidget, MealsWidget, ProjectsWidget, SmartHomeWidget, TasksWidget, WidgetError, type EmptyTileProps } from "./widgets";
+import type { AlertItem } from "@/lib/alerts";
 import type { DashboardProps } from "./types";
 
 export type { DashboardMeal, DashboardProps, DashboardTask } from "./types";
@@ -32,6 +33,8 @@ const WIDGET_TITLE: Record<WidgetId, string> = {
   grocery: "רשימת הקניות",
   tasks: "משימות",
   meals: "ארוחות",
+  lowstock: "מלאי נמוך",
+  bills: "תשלומים קרובים",
   attention: "דורש טיפול",
   smarthome: "בית חכם",
   projects: "פרויקטים",
@@ -97,13 +100,17 @@ export function Dashboard(p: DashboardProps) {
   const [setupHidden, hideSetup] = useDismissed(`homeos:setup-hidden:${p.householdId}`);
   const recipesSaved = p.setup.find((s) => s.key === "recipes")?.done ?? false;
 
-  // Attention shows what the brief did not already raise; chores live in the tasks widget.
-  const attention = useMemo(() => {
-    const rank = { now: 0, soon: 1 };
-    return p.alerts
-      .filter((a) => a.group !== "chore" && !brief.usedAlertKeys.includes(a.key))
-      .sort((a, b) => Number(!!a.handled) - Number(!!b.handled) || rank[a.urgency] - rank[b.urgency]);
-  }, [p.alerts, brief.usedAlertKeys]);
+  // Stock and payments get their own widgets (when shown); chores live in the tasks
+  // widget; attention keeps the rest that the brief did not already raise.
+  const rank = { now: 0, soon: 1 };
+  const byUrgency = (a: AlertItem, b: AlertItem) => Number(!!a.handled) - Number(!!b.handled) || rank[a.urgency] - rank[b.urgency];
+  const stockAlerts = useMemo(() => p.alerts.filter((a) => a.group === "stock" || a.group === "expiry").sort(byUrgency), [p.alerts]); // eslint-disable-line react-hooks/exhaustive-deps
+  const moneyAlerts = useMemo(() => p.alerts.filter((a) => a.group === "money").sort(byUrgency), [p.alerts]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ownWidget = (g: AlertItem["group"]) => ((g === "stock" || g === "expiry") && !layout.hidden.includes("lowstock")) || (g === "money" && !layout.hidden.includes("bills"));
+  const attention = useMemo(
+    () => p.alerts.filter((a) => a.group !== "chore" && !ownWidget(a.group) && !brief.usedAlertKeys.includes(a.key)).sort(byUrgency),
+    [p.alerts, brief.usedAlertKeys, layout.hidden], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   // ---- Widgets ----
   const unavailable: Partial<Record<WidgetId, string>> = {};
@@ -137,6 +144,14 @@ export function Dashboard(p: DashboardProps) {
               : { key: id, icon: ChefHat, title: "מתכונים", text: "לשמור מתכון ראשון", href: "/recipes/new" },
           );
         }
+        break;
+      case "lowstock":
+        if (stockAlerts.length) blocks.push(<LowStockWidget key={id} alerts={stockAlerts.slice(0, 8)} preview={p.preview} />);
+        else unavailable.lowstock = "שום דבר לא חסר";
+        break;
+      case "bills":
+        if (moneyAlerts.length) blocks.push(<BillsWidget key={id} alerts={moneyAlerts.slice(0, 4)} preview={p.preview} />);
+        else unavailable.bills = "אין תשלומים בשבוע הקרוב";
         break;
       case "attention":
         if (attention.length) blocks.push(<AttentionWidget key={id} alerts={attention.slice(0, 4)} total={attention.length} preview={p.preview} />);

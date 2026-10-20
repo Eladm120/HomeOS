@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Boxes, ClipboardList, Minus, Plus, Search, ShoppingCart } from "lucide-react";
+import { Boxes, ClipboardList, Minus, Plus, ReceiptText, ScanBarcode, Search, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { applyInventoryMovement } from "@/server/actions/inventory";
 import { addInventoryItemToList } from "@/server/actions/grocery";
@@ -46,6 +46,11 @@ export function InventoryView({
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState<string>("all");
   const [filter, setFilter] = useState<Filter>("all");
+  // Deep links from the dashboard: /inventory?filter=low|expiring
+  useEffect(() => {
+    const f = new URLSearchParams(window.location.search).get("filter");
+    if (f === "low" || f === "expiring") setFilter(f);
+  }, []);
   const [sheetOpen, setSheetOpen] = useState(false);
   useOpenFromQuery(() => setSheetOpen(true));
 
@@ -115,10 +120,10 @@ export function InventoryView({
 
       <div className="scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4">
         <Link href="/scan" className="pressable flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3.5 text-[15px] font-medium">
-          📷 סריקת מוצר
+          <ScanBarcode className="size-[18px] text-primary" /> סריקת מוצר
         </Link>
         <Link href="/receipts" className="pressable flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3.5 text-[15px] font-medium">
-          🧾 קבלה מהסופר
+          <ReceiptText className="size-[18px] text-primary" /> קבלה מהסופר
         </Link>
       </div>
 

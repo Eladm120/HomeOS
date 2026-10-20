@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -102,7 +103,7 @@ export function NotificationsView({ alerts, notifications, preview }: { alerts: 
                   const body = (
                     <>
                       <span aria-hidden className="text-[20px]">
-                        {kind.emoji}
+                        <Emoji3D emoji={kind.emoji} className="size-[72%]" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className={cn("block truncate text-[15px]", !n.read_at && "font-semibold")}>{n.title}</span>

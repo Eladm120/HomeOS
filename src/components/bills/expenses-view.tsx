@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Repeat, Trash2 } from "lucide-react";
@@ -128,7 +129,7 @@ export function ExpensesView({
               {expenses.map((e) => (
                 <div key={e.id} className="flex items-center gap-3 px-4 py-3">
                   <span aria-hidden className="text-[20px]">
-                    {(EXPENSE_CATEGORIES[e.category] ?? EXPENSE_CATEGORIES.other).emoji}
+                    <Emoji3D emoji={(EXPENSE_CATEGORIES[e.category] ?? EXPENSE_CATEGORIES.other).emoji} className="size-[72%]" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{e.title}</span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -193,7 +194,7 @@ export function SmartHomeView({ householdId, connected, devices, lastSync, lastE
               {devices.map((d) => (
                 <label key={d.id} className="flex items-center gap-3 px-4 py-2.5">
                   <span className="text-[20px]" aria-hidden>
-                    {KIND_UI[d.kind].emoji}
+                    <Emoji3D emoji={KIND_UI[d.kind].emoji} className="size-[72%]" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{d.name}</span>
@@ -269,7 +270,7 @@ function DeviceTile({ d, busy, onCommand }: { d: DeviceView; busy: boolean; onCo
             on && !sensor ? "bg-surface shadow-[0_0_24px_4px_color-mix(in_oklab,var(--honey)_35%,transparent)]" : "bg-fill grayscale-[0.4]",
           )}
         >
-          {busy ? <Loader2 className="size-5 animate-spin text-muted" /> : ui.emoji}
+          {busy ? <Loader2 className="size-5 animate-spin text-muted" /> : <Emoji3D emoji={ui.emoji} className="size-[72%]" />}
         </span>
         {d.capabilities.power && d.online && (
           <span className={cn("grid size-7 place-items-center rounded-full", on ? "bg-primary text-primary-foreground" : "bg-fill text-muted")} aria-hidden>

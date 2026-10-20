@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -85,7 +86,7 @@ export function ApplianceDetail({
             <SignedImage path={a.image_path} alt={a.name} className="size-24 rounded-[var(--radius)] border border-border" />
           ) : (
             <span className="cat-tint grid size-24 place-items-center rounded-[var(--radius)] text-[44px]" style={{ "--h": 235 } as React.CSSProperties}>
-              {applianceEmoji(a)}
+              <Emoji3D emoji={applianceEmoji(a)} className="size-[72%]" />
             </span>
           )}
           <div className="space-y-2">

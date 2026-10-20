@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/card";
 import { FilterPills } from "@/components/ui/panel";
 import { SignedImage } from "@/components/media/signed-image";
+import { Emoji3D } from "@/components/ui/emoji-3d";
 
 export interface RecipeCardData extends Recipe {
   readiness: { missing: number; unclear: number; total: number };
@@ -52,7 +53,7 @@ export function RecipeImage({ r, className }: { r: Pick<Recipe, "title" | "image
       className={cn("grid place-items-center text-[44px]", className)}
       style={{ background: `linear-gradient(150deg, oklch(var(--tile-l) 0.06 ${h}), oklch(calc(var(--tile-l) - 0.06) 0.08 ${h + 25}))` }}
     >
-      <span className="drop-shadow-md">{dishEmoji(r.title)}</span>
+      <Emoji3D emoji={dishEmoji(r.title)} className="size-[58%] max-h-28 max-w-28" />
     </span>
   );
 }

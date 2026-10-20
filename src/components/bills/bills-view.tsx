@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,7 +29,7 @@ export function BillIcon({ category }: { category: string }) {
   const c = BILL_CATEGORY[category] ?? BILL_CATEGORY.other;
   return (
     <span aria-hidden className="cat-tint grid size-11 shrink-0 place-items-center rounded-[14px] text-[22px]" style={{ "--h": c.hue } as React.CSSProperties}>
-      {c.emoji}
+      <Emoji3D emoji={c.emoji} className="size-[72%]" />
     </span>
   );
 }

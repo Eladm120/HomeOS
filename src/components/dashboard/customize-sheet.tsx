@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji3D } from "@/components/ui/emoji-3d";
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Check, Eye, EyeOff } from "lucide-react";
 import { moveWidget, toggleWidget, WIDGETS, type DashboardLayout, type WidgetId } from "@/lib/dashboard";
@@ -52,7 +53,7 @@ export function CustomizeSheet({
           return (
             <li key={id} className={cn("flex items-center gap-2 rounded-2xl bg-surface-2 p-2 ps-3 transition-opacity", hidden && "opacity-55")}>
               <span aria-hidden className="text-[20px]">
-                {w.emoji}
+                <Emoji3D emoji={w.emoji} className="size-[72%]" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{w.label}</span>

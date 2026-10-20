@@ -11,6 +11,8 @@ export const WIDGETS = [
   { id: "grocery", label: "רשימת קניות", emoji: "🛒" },
   { id: "tasks", label: "משימות היום", emoji: "🧺" },
   { id: "meals", label: "ארוחות ומתכונים", emoji: "🍽️" },
+  { id: "lowstock", label: "מלאי נמוך", emoji: "📦" },
+  { id: "bills", label: "תשלומים קרובים", emoji: "🧾" },
   { id: "attention", label: "דורש טיפול", emoji: "🔔" },
   { id: "smarthome", label: "בית חכם", emoji: "💡" },
   { id: "projects", label: "פרויקטים וקניות לבית", emoji: "🛠️" },
